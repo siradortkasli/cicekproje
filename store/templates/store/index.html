@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="main-menu border-bottom py-2 d-none d-lg-block">
+    <div class="container d-flex" id="navbar-categories">
+        </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-6">
+        <div class="card bg-warning text-white p-4 border-0 shadow-lg" style="height: 300px; background-image: url('https://via.placeholder.com/600x300/ff7f00/FFFFFF?text=BANNER+1'); background-size: cover;">
+            <div class="card-body d-flex flex-column justify-content-end">
+                <h3 class="card-title fw-bold text-dark">ÇİÇEK ARANJMANLARI</h3>
+                <h4 class="text-dark">AYNI GÜN TESLİMAT</h4>
+                <p class="text-dark fw-bold">Şimdi Sipariş Verin</p>
+                <a href="#" class="btn btn-outline-dark fw-bold w-50 mt-2">İncele</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-danger text-white p-4 border-0 shadow-lg" style="height: 300px; background-image: url('https://via.placeholder.com/600x300/dc3545/FFFFFF?text=BANNER+2'); background-size: cover;">
+            <div class="card-body d-flex flex-column justify-content-end">
+                <h3 class="card-title fw-bold">ÇOK SATANLAR</h3>
+                <h4>AYNI GÜN TESLİMAT</h4>
+                <a href="#" class="btn btn-outline-light fw-bold w-50 mt-2">Hemen Gör</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2 class="mb-4 text-center text-success fw-bold">💐 Fırsat Ürünleri ve Çiçekler</h2>
+
+<div class="row mt-4" id="product-list"></div>
+
+<script>
+window.loadProducts = function(searchValue = "", categoryId = "") {
+  let url = `/api/products/?q=${searchValue}&category=${categoryId}`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      let html = "";
+
+      if (data.length === 0) {
+        html = `<div class="alert alert-warning text-center">Ürün bulunamadı.</div>`;
+      }
+
+      data.forEach(product => {
+        const imageUrl = product.image_url ? product.image_url : "https://via.placeholder.com/300x250";
+
+        html += `
+          <div class="col-6 col-md-3 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+              <img src="${imageUrl}" class="card-img-top" style="height:250px; object-fit:cover;">
+              <div class="card-body text-center">
+                <h6 class="fw-bold">${product.name}</h6>
+                <p class="text-danger fw-bold">${product.price} TL</p>
+                <a href="/urun/${product.id}/" class="btn btn-success w-100">İncele</a>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById("product-list").innerHTML = html;
+    });
+}
+
+/* Sayfa açılınca hepsi gelsin */
+loadProducts();
+
+/* ÜST ARAMA + ÜST KATEGORİ BİRLİKTE ÇALIŞIR */
+const input = document.getElementById("searchInput");
+
+if (input) {  // varsa bağla
+  input.addEventListener("keyup", function () {
+    loadProducts(this.value, selectedCategory);
+  });
+}
+
+</script>
+
+
+
+{% endblock %}

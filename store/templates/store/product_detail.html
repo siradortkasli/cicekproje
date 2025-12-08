@@ -1,0 +1,69 @@
+<div class="container my-5">
+  <div class="row g-5">
+
+    <div class="col-md-6">
+      <div class="position-relative">
+        <span id="badge-premium" class="badge bg-warning text-dark position-absolute m-3" style="display:none">PREMIUM ÇİÇEK</span>
+        <span id="badge-video" class="badge bg-success position-absolute m-3 mt-5" style="display:none">VİDEOLU ÜRÜN</span>
+
+        <img id="main-image" src="" class="img-fluid rounded shadow">
+
+        <div id="thumbs" class="d-flex mt-3 gap-2"></div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <h1 id="product-name" class="fw-bold"></h1>
+
+      <div class="d-flex align-items-center mb-3" id="rating-area"></div>
+
+      <h2 id="product-price" class="text-success fw-bold"></h2>
+      <p id="delivery-text" class="text-success">Ücretsiz Teslimat</p>
+
+      <div class="alert alert-success d-flex justify-content-between align-items-center">
+        <span id="delivery-location">📍 Erzurum, Türkiye</span>
+        <button id="change-location" class="btn btn-sm btn-light">Değiştir</button>
+      </div>
+
+      <div id="delivery-days" class="d-flex gap-2 mb-3"></div>
+
+      <select id="delivery-hours" class="form-select w-50 mb-4"></select>
+
+      <div class="d-flex gap-4 mb-4" id="trust-area"></div>
+
+      <div class="d-flex gap-3">
+        <button id="buy-btn" class="btn btn-success btn-lg w-75">Sipariş Ver</button>
+        <button id="fav-btn" class="btn btn-outline-danger btn-lg">♡</button>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="my-4">
+
+  <div>
+    <h4>Yorumlar (<span id="review-count">0</span>)</h4>
+    <div id="review-list"></div>
+
+    <h5 class="mt-4">Yorum Ekle</h5>
+    <form id="review-form">
+      <input id="rev-name" class="form-control mb-2" placeholder="Adınız (opsiyonel)">
+      <select id="rev-rating" class="form-select mb-2">
+        <option value="5">5 - Mükemmel</option>
+        <option value="4">4 - Çok iyi</option>
+        <option value="3">3 - İyi</option>
+        <option value="2">2 - Kötü</option>
+        <option value="1">1 - Çok kötü</option>
+      </select>
+      <textarea id="rev-comment" class="form-control mb-2" rows="3" placeholder="Yorumunuz"></textarea>
+      <button class="btn btn-primary" type="submit">Gönder</button>
+    </form>
+  </div>
+</div>
+
+<script>
+const productId = "{{ product.id }}";
+</script>
+
+{% load static %}
+<script src="{% static 'js/product_detail_dynamic.js' %}"></script>

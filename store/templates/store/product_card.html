@@ -1,0 +1,29 @@
+{% extends "store/base.html" %}
+{% block content %}
+
+<h2>🌼 {{ category.name }} Kategorisi</h2>
+
+<div class="row mt-4">
+    {% for product in products %}
+    <div class="col-md-3 mb-4">
+        <div class="card h-100 shadow-sm">
+
+            {% if product.image_url %}
+            <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
+            {% else %}
+            <img src="https://via.placeholder.com/300x300" class="card-img-top" alt="No Image">
+            {% endif %}
+
+            <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="text-success fw-bold">{{ product.price }} TL</p>
+                <a href="{% url 'product_detail' product.id %}" class="btn btn-success w-100">İncele</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+        <p>Bu kategoride ürün bulunamadı.</p>
+    {% endfor %}
+</div>
+
+{% endblock %}

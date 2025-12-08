@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ÇiçekSepeti Clone</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        .topbar {
+            font-size: 0.85rem;
+            background-color: #f7f7f7; /* Hafif gri arka plan */
+        }
+        .main-menu a {
+            padding: 0.5rem 0.8rem;
+            color: #333;
+            font-weight: 500;
+            text-decoration: none;
+        }
+        .main-menu a:hover {
+            color: #dc3545; 
+        }
+        .main-menu a.active {
+        color: #dc3545; /* Veya Bootstrap'in success yeşili (#198754) */
+        border-bottom: 2px solid #dc3545;
+        font-weight: bold;
+    }
+    .product-card {
+        transition: box-shadow 0.3s;
+    }
+    .product-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .product-price {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #333;
+    }
+    .original-price {
+        text-decoration: line-through;
+        color: #999;
+        font-size: 0.9rem;
+    }
+    </style>
+</head>
+<body>
+
+<div class="topbar py-1 d-none d-lg-block">
+    <div class="container d-flex justify-content-between">
+        <div class="text-secondary">
+            <small>Geri dönmek için <a href="#" class="text-danger text-decoration-none fw-bold">tıklayın</a>, geçmiş siparişi görmek için <a href="#" class="text-danger text-decoration-none fw-bold">tıklayın</a></small>
+        </div>
+        <div>
+            <a href="#" class="text-success text-decoration-none me-3"><i class="bi bi-gift me-1"></i> hediye & extra</a>
+            <a href="#" class="text-secondary text-decoration-none me-3">Kurumsal Hediye</a>
+            <a href="#" class="text-secondary text-decoration-none">Yardım</a>
+        </div>
+    </div>
+</div>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm py-3">
+    <div class="container">
+        <a class="navbar-brand text-success fw-bold fs-3 d-flex align-items-center" href="/">
+            <i class="bi bi-flower1 me-2" style="font-size: 1.5rem;"></i> ÇiçekSepeti
+        </a>
+        
+        <form class="d-none d-lg-flex mx-auto w-50" role="search">
+            <input id="searchInput" class="form-control me-0 border-success" type="search" placeholder="Marka, ürün veya kategori ara" >
+            <button class="btn btn-success" type="submit"><i class="bi bi-search"></i></button>
+        </form>
+
+        <div class="d-flex align-items-center">
+            <a class="btn btn-light text-secondary me-3 d-none d-lg-block" href="#">
+                <i class="bi bi-truck me-1"></i> Sipariş Takibi
+            </a>
+            
+            <div class="dropdown me-3 d-none d-lg-block">
+                 <a class="btn btn-light text-secondary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person me-1"></i> Üyelik
+                </a>
+                <ul class="dropdown-menu">
+                    {% if user.is_authenticated %}
+                        <li><a class="dropdown-item text-success" href="#">Merhaba, {{ user.username }}</a></li>
+                        <li><a class="dropdown-item text-secondary" href="/accounts/logout/">Çıkış Yap</a></li>
+                    {% else %}
+                        <li><a class="dropdown-item" href="/accounts/login/">Giriş Yap</a></li>
+                        <li><a class="dropdown-item" href="/accounts/register/">Kayıt Ol</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <a class="btn btn-success" href="#">
+                <i class="bi bi-cart me-1"></i> <span class="badge bg-white text-success rounded-pill">0</span>
+            </a>
+        </div>
+    </div>
+</nav>
+<div class="main-menu border-bottom py-2 d-none d-lg-block">
+    <div class="container d-flex justify-content-start" id="navbar-categories">
+        <!-- KATEGORİLER BURAYA API'DEN GELECEK -->
+    </div>
+</div>
+
+<main class="container mt-4" id="contentArea">
+    {% block content %}
+    {% endblock %}
+</main>
+
+
+<footer class="bg-light text-center p-3 mt-5">
+    <small>© 2025 ÇiçekSepeti Clone • Tüm Hakları Saklıdır.</small>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+let selectedCategory = "";
+
+fetch("/api/categories/")
+  .then(res => res.json())
+  .then(data => {
+    let html = `<a href="#" class="nav-link-item active" onclick="filterNavbarCategory(this, '')">Tümü</a>`;
+
+    data.forEach(cat => {
+      html += `<a href="#" class="nav-link-item" onclick="filterNavbarCategory(this, ${cat.id})">${cat.name}</a>`;
+    });
+
+    document.getElementById("navbar-categories").innerHTML = html;
+  });
+
+
+function filterNavbarCategory(el, id) {
+  selectedCategory = id;
+
+  document.querySelectorAll(".nav-link-item").forEach(e => e.classList.remove("active"));
+  el.classList.add("active");
+
+  // ✅ ASIL ÜRÜN YÜKLEME SİSTEMİ (index.html'deki)
+  if (typeof window.loadProducts === "function") {
+    window.loadProducts("", selectedCategory);
+  }
+}
+
+</script>
+
+</body>
+</html>
