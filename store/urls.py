@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .api_service import getCities, addToCart
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -10,6 +11,9 @@ urlpatterns = [
     path('api/product/<int:id>/', views.product_detail_api),
     path('api/product/<int:id>/reviews/', views.product_reviews_api),
     path('api/product/<int:id>/reviews/create/', views.product_review_create_api),
+    path("cities/", getCities),
+    path("cart/add/", addToCart),
+
 ]
 
 

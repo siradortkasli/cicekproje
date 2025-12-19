@@ -1,69 +1,260 @@
-<div class="container my-5">
-  <div class="row g-5">
+{% extends "store/base.html" %}
+{% block content %}
 
-    <div class="col-md-6">
-      <div class="position-relative">
-        <span id="badge-premium" class="badge bg-warning text-dark position-absolute m-3" style="display:none">PREMIUM ÇİÇEK</span>
-        <span id="badge-video" class="badge bg-success position-absolute m-3 mt-5" style="display:none">VİDEOLU ÜRÜN</span>
+<style>
 
-        <img id="main-image" src="" class="img-fluid rounded shadow">
+    #reviewsArea p {
+        font-size: 15px;
+    }
 
-        <div id="thumbs" class="d-flex mt-3 gap-2"></div>
-      </div>
-    </div>
+.product-left-box img {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
 
-    <div class="col-md-6">
-      <h1 id="product-name" class="fw-bold"></h1>
+.img-thumb {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+}
 
-      <div class="d-flex align-items-center mb-3" id="rating-area"></div>
+.price {
+    font-size: 32px;
+    font-weight: bold;
+    color: #2fa54c;
+}
 
-      <h2 id="product-price" class="text-success fw-bold"></h2>
-      <p id="delivery-text" class="text-success">Ücretsiz Teslimat</p>
+.select-box {
+    border: 1px solid #ddd;
+    background: #fafafa;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 7px;
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+}
 
-      <div class="alert alert-success d-flex justify-content-between align-items-center">
-        <span id="delivery-location">📍 Erzurum, Türkiye</span>
-        <button id="change-location" class="btn btn-sm btn-light">Değiştir</button>
-      </div>
+.order-button {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 10px;
+    background: #2fa54c;
+    font-weight: bold;
+    font-size: 22px;
+    color: white;
+}
 
-      <div id="delivery-days" class="d-flex gap-2 mb-3"></div>
+.cart-button {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: 2px solid #2fa54c;
+    font-weight: bold;
+    font-size: 20px;
+    background: white;
+    margin-top: 5px;
+}
 
-      <select id="delivery-hours" class="form-select w-50 mb-4"></select>
+</style>
 
-      <div class="d-flex gap-4 mb-4" id="trust-area"></div>
 
-      <div class="d-flex gap-3">
-        <button id="buy-btn" class="btn btn-success btn-lg w-75">Sipariş Ver</button>
-        <button id="fav-btn" class="btn btn-outline-danger btn-lg">♡</button>
-      </div>
-
-    </div>
-  </div>
-
-  <hr class="my-4">
-
-  <div>
-    <h4>Yorumlar (<span id="review-count">0</span>)</h4>
-    <div id="review-list"></div>
-
-    <h5 class="mt-4">Yorum Ekle</h5>
-    <form id="review-form">
-      <input id="rev-name" class="form-control mb-2" placeholder="Adınız (opsiyonel)">
-      <select id="rev-rating" class="form-select mb-2">
-        <option value="5">5 - Mükemmel</option>
-        <option value="4">4 - Çok iyi</option>
-        <option value="3">3 - İyi</option>
-        <option value="2">2 - Kötü</option>
-        <option value="1">1 - Çok kötü</option>
-      </select>
-      <textarea id="rev-comment" class="form-control mb-2" rows="3" placeholder="Yorumunuz"></textarea>
-      <button class="btn btn-primary" type="submit">Gönder</button>
-    </form>
-  </div>
+<div class="container mt-4">
+    <div id="productDetailArea"></div>
 </div>
 
+<input type="number" id="qty" value="1">
+<button onclick="addToCart(5)"> Sepete Ekle </button>
+
+<button onclick="window.location.href='/cart/'">Sepete Git</button>
+<button onclick="window.location.href='/payment/'">Sipariş Ver</button>
+
 <script>
-const productId = "{{ product.id }}";
+
+document.addEventListener("DOMContentLoaded", function () {
+    let productId = window.location.pathname.split("/")[2];
+    loadProduct(productId);
+    loadCities();
+});
+
+
+function loadCities() {
+    fetch("/api/cities/")
+        .then(res => res.json())
+        .then(data => {
+            window.cityList = data.cities;
+        });
+}
+
+
+function loadProduct(id) {
+
+    fetch(`/api/product/${id}/`)
+        .then(res => res.json())
+        .then(p => {
+
+            document.getElementById("productDetailArea").innerHTML = `
+
+                <div class="row">
+
+                    <div class="col-md-6 product-left-box">
+                        <img src="${p.image_url}" id="mainImage">
+                    </div>
+
+                    <div class="col-md-6">
+
+                        <h3 class="fw-bold">${p.name}</h3>
+                        <p class="price">${p.price} TL</p>
+
+                        <label class="mt-2">Gönderim Şehri:</label>
+                        <select id="citySelect" class="form-control"></select>
+
+                        <label class="mt-2">Teslim Tarihi:</label>
+                        <select id="dateSelect" class="form-control">
+                            <option value="Bugün">Bugün</option>
+                            <option value="Yarın">Yarın</option>
+                            <option value="Çarşamba">Çarşamba</option>
+                            <option value="Takvim">Takvim</option>
+                        </select>
+
+                        <label class="mt-2">Adet:</label>
+                        <select id="qtySelect" class="form-control">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+
+                        <button onclick="orderProduct(${p.id})" class="order-button mt-4">Sipariş Ver</button>
+
+                        <button onclick="addToCart(${p.id}, ${p.price})" class="cart-button">Sepete Ekle</button>
+
+                        <button onclick="window.location='/sepet/'" class="cart-button">Sepete Git</button>
+
+                    </div>
+
+                </div>
+
+                <hr class="mt-4">
+
+                <div class="mt-4">
+                    <h4>Yorumlar</h4>
+                    <div id="reviewsArea">Yükleniyor...</div>
+                </div>
+
+            `;
+
+            loadReviews(id);
+
+            /// Şehir seçimi dinamik doldur
+            let citySelect = document.getElementById("citySelect");
+            window.cityList.forEach(city => {
+                citySelect.innerHTML += `<option value="${city}">${city}</option>`;
+            });
+
+        });
+}
+
+
+// ✔ API'den yorum çekme
+function loadReviews(productId) {
+    fetch(`/api/product/${productId}/reviews/`)
+        .then(res => res.json())
+        .then(data => {
+            let html = "";
+            if (data.length === 0) {
+                html = `<p>Henüz yorum yok.</p>`;
+            } else {
+                data.forEach(r => {
+                    html += `
+                        <div class="border p-2 rounded mb-2">
+                            <strong>${r.username}</strong>
+                            <p>${r.comment}</p>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById("reviewsArea").innerHTML = html;
+        });
+}
+
+
+// ✔ Sepete API ile ekleme
+function addToCart(id, price) {
+
+    let item = {
+        product_id: id,
+        quantity: document.getElementById("qtySelect").value,
+        delivery_date: document.getElementById("dateSelect").value,
+        city: document.getElementById("citySelect").value
+    };
+
+    fetch("/api/cart/add/", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(item)
+    })
+    .then(r => r.json())
+    .then(d => {
+        alert("Sepete eklendi!");
+    });
+}
+
+
+// ✔ Siparişi anında yönlendirme
+function orderProduct(id) {
+
+    let orderData = {
+        product_id: id,
+        quantity: document.getElementById("qtySelect").value
+    };
+
+    fetch("/api/order/checkout/", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(orderData)
+    })
+    .then(res => res.json())
+    .then(data => {
+        window.location = data.payment_url;  // ödeme sayfasına gider
+    });
+}
+fetch("http://127.0.0.1:8000/cities/")
+        .then(res => res.json())
+        .then(data => {
+            const citySelect = document.getElementById("citySelect");
+
+            data.forEach(city => {
+                const option = document.createElement("option");
+                option.value = city;
+                option.textContent = city;
+                citySelect.appendChild(option);
+            });
+        });
+
+        function addToCart(product_id) {
+    let qty = document.getElementById('qty').value;
+
+    fetch("http://127.0.0.1:8000/cart/add/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({
+            product_id: product_id,
+            quantity: qty
+        })
+    }).then(res => res.json())
+    .then(data => {
+        alert(data.message)
+    });
+}
 </script>
 
-{% load static %}
-<script src="{% static 'js/product_detail_dynamic.js' %}"></script>
+
+{% endblock %}

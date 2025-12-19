@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category, ProductImage, Review
+from .models import Product, Category, ProductImage, Review, Cart, CartItem, Order, City
 from .api_service import save_products_to_db
 
 class ProductImageInline(admin.TabularInline):
@@ -20,6 +20,11 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ("product","name","rating","created_at")
+    list_display = ("id", "username", "rating", "product", "created_at")
     
 admin.site.register(Category)
+admin.site.register(ProductImage)
+admin.site.register(City)
+admin.site.register(Cart)
+admin.site.register(CartItem)
+admin.site.register(Order)

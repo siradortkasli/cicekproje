@@ -1,29 +1,62 @@
 {% extends "store/base.html" %}
+
+
 {% block content %}
 
-<h2>🌼 {{ category.name }} Kategorisi</h2>
+<h2 class="mb-4 fw-bold">Ürünleri İncele</h2>
 
-<div class="row mt-4">
-    {% for product in products %}
-    <div class="col-md-3 mb-4">
-        <div class="card h-100 shadow-sm">
-
-            {% if product.image_url %}
-            <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
-            {% else %}
-            <img src="https://via.placeholder.com/300x300" class="card-img-top" alt="No Image">
-            {% endif %}
-
-            <div class="card-body">
-                <h5 class="card-title">{{ product.name }}</h5>
-                <p class="text-success fw-bold">{{ product.price }} TL</p>
-                <a href="{% url 'product_detail' product.id %}" class="btn btn-success w-100">İncele</a>
-            </div>
-        </div>
-    </div>
-    {% empty %}
-        <p>Bu kategoride ürün bulunamadı.</p>
-    {% endfor %}
+<div class="row" id="product-list">
+    <!-- Ürünler API’den buraya gelecek -->
 </div>
+
+<script>
+
+// Sayfa açılınca yükle
+document.addEventListener("DOMContentLoaded", function () {
+    loadProducts();
+});
+
+// Bu fonksiyonu base.html de çağırıyor!
+window.loadProducts = function(searchText = "", categoryId = "") {
+    let url = "/api/products/";
+
+    if (searchText || categoryId) {
+        url += "?";
+        if (searchText) url += "q=" + searchText + "&";
+        if (categoryId) url += "category=" + categoryId;
+    }
+
+    fetch(url)
+        .then(res => res.json())
+        .then(products => {
+            let html = "";
+
+            products.forEach(p => {
+                html += `
+                <div class="col-md-3 mb-4">
+                    <div class="card h-100 shadow-sm product-card">
+
+                        <img src="${p.image_url ?? 'https://via.placeholder.com/300x300'}"
+                             class="card-img-top" alt="${p.name}">
+                        
+                        <div class="card-body">
+                            <h5 class="card-title">${p.name}</h5>
+                            <p class="text-success fw-bold">${p.price} TL</p>
+
+                            <a href="/product/${p.id}/"
+                               class="btn btn-success w-100">
+                               İncele
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+
+            document.getElementById("product-list").innerHTML = html;
+        });
+}
+
+</script>
 
 {% endblock %}
