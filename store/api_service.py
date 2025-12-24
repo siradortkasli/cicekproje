@@ -18,7 +18,9 @@ def getCities(request):
         "Van","Yozgat","Zonguldak","Aksaray","Bayburt","Karaman","Kırıkkale","Batman",
         "Şırnak","Bartın","Ardahan","Iğdır","Yalova","Karabük","Kilis","Osmaniye","Düzce"
     ]
-    return Response(cities)
+    return Response({
+        "cities": cities
+    })
 @api_view(['POST'])
 def addToCart(request):
     product_id = request.data.get("product_id")

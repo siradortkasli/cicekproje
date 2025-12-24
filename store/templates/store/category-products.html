@@ -1,0 +1,23 @@
+{% extends "store/base.html" %}
+{% block content %}
+
+<h3 class="mb-4 text-success">{{ category.name }}</h3>
+
+<div class="row">
+  {% for product in products %}
+    <div class="col-6 col-md-3 mb-4">
+      <div class="card h-100 shadow-sm">
+        <img src="{{ product.image_url }}" class="card-img-top" style="height:250px; object-fit:cover;">
+        <div class="card-body text-center">
+          <h6 class="fw-bold">{{ product.name }}</h6>
+          <p class="text-danger fw-bold">{{ product.price }} TL</p>
+          <a href="/urun/{{ product.id }}/" class="btn btn-success w-100">İncele</a>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <p>Bu kategoride ürün yok.</p>
+  {% endfor %}
+</div>
+
+{% endblock %}

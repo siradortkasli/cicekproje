@@ -1,16 +1,46 @@
 {% extends "store/base.html" %}
 {% block content %}
+{% load static %}
+
 
 <style>
+#reviewsArea p { font-size: 15px; }
+.star-rating span {
+    font-size: 26px;
+    cursor: pointer;
+    color: #ccc;
+}
 
-    #reviewsArea p {
-        font-size: 15px;
-    }
+.star-rating span.active {
+    color: #f5b301;
+}
+.time-box {
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fff;
+}
+
+.time-box:hover {
+    border-color: #2fa54c;
+    background: #f4fff8;
+}
+
+.time-box.active {
+    border-color: #2fa54c;
+    background: #e8f8ee;
+    color: #2fa54c;
+    font-weight: bold;
+}
 
 .product-left-box img {
     width: 100%;
     border-radius: 10px;
     border: 1px solid #ddd;
+    box-shadow: 0 10px 30px rgba(0,0,0,.1);
 }
 
 .img-thumb {
@@ -25,17 +55,6 @@
     font-size: 32px;
     font-weight: bold;
     color: #2fa54c;
-}
-
-.select-box {
-    border: 1px solid #ddd;
-    background: #fafafa;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 7px;
-    display: flex;
-    justify-content: space-between;
-    cursor: pointer;
 }
 
 .order-button {
@@ -59,202 +78,446 @@
     background: white;
     margin-top: 5px;
 }
+.order-button:hover {
+    background: #279445;
+}
+
+.cart-button:hover {
+    background: #e8f8ee;
+}
+
+
+.star {
+    color: #ffb400;
+    font-size: 16px;
+}
+
+.star.gray {
+    color: #ddd;
+}
+
+.review-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.review-meta {
+    font-size: 13px;
+    color: #777;
+}
+
+.review-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.08);
+}
+
+
+.badge-custom {
+    background: #e8f8ee;
+    color: #2fa54c;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+}
+select, input[type="date"] {
+    border-radius: 10px;
+    padding: 10px;
+}
+
+select:focus {
+    border-color: #2fa54c;
+    box-shadow: 0 0 0 0.2rem rgba(47,165,76,.25);
+}
 
 </style>
-
 
 <div class="container mt-4">
     <div id="productDetailArea"></div>
 </div>
-
-<input type="number" id="qty" value="1">
-<button onclick="addToCart(5)"> Sepete Ekle </button>
-
-<button onclick="window.location.href='/cart/'">Sepete Git</button>
-<button onclick="window.location.href='/payment/'">Sipariş Ver</button>
-
 <script>
-
+let currentProductId = null;
+window.cityList = [];
 document.addEventListener("DOMContentLoaded", function () {
     let productId = window.location.pathname.split("/")[2];
-    loadProduct(productId);
-    loadCities();
+    loadProduct(productId); // 🔥 önce HTML oluşsun
 });
 
 
 function loadCities() {
-    fetch("/api/cities/")
+    return fetch("/api/cities/")
         .then(res => res.json())
         .then(data => {
-            window.cityList = data.cities;
+            const citySelect = document.getElementById("citySelect");
+            if (!citySelect) {
+                console.error("citySelect bulunamadı");
+                return;
+            }
+
+            citySelect.innerHTML = "<option value=''>Şehir Seçiniz</option>";
+
+            data.forEach(city => {
+                citySelect.innerHTML += `<option value="${city}">${city}</option>`;
+            });
+        })
+        .catch(err => {
+            console.error("Şehirler yüklenemedi:", err);
         });
 }
 
 
-function loadProduct(id) {
 
+function loadProduct(id) {
+window.currentProductId = id; 
     fetch(`/api/product/${id}/`)
         .then(res => res.json())
         .then(p => {
 
-            document.getElementById("productDetailArea").innerHTML = `
 
-                <div class="row">
+document.getElementById("productDetailArea").innerHTML = `
+<div class="row">
 
-                    <div class="col-md-6 product-left-box">
-                        <img src="${p.image_url}" id="mainImage">
-                    </div>
+<div class="col-md-6 product-left-box">
+    <img src="${p.image_url}" id="mainImage">
+</div>
 
-                    <div class="col-md-6">
+<div class="col-md-6">
 
-                        <h3 class="fw-bold">${p.name}</h3>
-                        <p class="price">${p.price} TL</p>
+<h3 class="fw-bold">${p.name}</h3>
+<span class="badge-custom mb-2">Aynı Gün Teslim</span>
 
-                        <label class="mt-2">Gönderim Şehri:</label>
-                        <select id="citySelect" class="form-control"></select>
+<p class="price mt-2">${p.price} TL</p>
+<p class="text-muted">KDV Dahil</p>
 
-                        <label class="mt-2">Teslim Tarihi:</label>
-                        <select id="dateSelect" class="form-control">
-                            <option value="Bugün">Bugün</option>
-                            <option value="Yarın">Yarın</option>
-                            <option value="Çarşamba">Çarşamba</option>
-                            <option value="Takvim">Takvim</option>
-                        </select>
+<label class="mt-2">Gönderim Şehri:</label>
+<select id="citySelect" class="form-control">
+    <option value="">Şehir Seçiniz</option>
+</select>
 
-                        <label class="mt-2">Adet:</label>
-                        <select id="qtySelect" class="form-control">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                        </select>
+<label class="mt-2">Teslim Tarihi:</label>
+<select id="dateSelect" class="form-control" onchange="toggleCalendar()">
+    <option value="today">Bugün</option>
+    <option value="tomorrow">Yarın</option>
+    <option value="calendar">Takvimden Seç</option>
+</select>
 
-                        <button onclick="orderProduct(${p.id})" class="order-button mt-4">Sipariş Ver</button>
+<label class="mt-3 fw-bold">Teslimat Saati:</label>
 
-                        <button onclick="addToCart(${p.id}, ${p.price})" class="cart-button">Sepete Ekle</button>
+<div class="row g-2 mt-1" id="timeSlots">
 
-                        <button onclick="window.location='/sepet/'" class="cart-button">Sepete Git</button>
+    <div class="col-4">
+        <div class="time-box active" onclick="selectTime(this, '08:00-12:00')">
+            <strong>08:00 - 12:00</strong>
+            <div class="text-muted small">Sabah</div>
+        </div>
+    </div>
 
-                    </div>
+    <div class="col-4">
+        <div class="time-box" onclick="selectTime(this, '12:00-17:00')">
+            <strong>12:00 - 17:00</strong>
+            <div class="text-muted small">Öğle</div>
+        </div>
+    </div>
 
-                </div>
+    <div class="col-4">
+        <div class="time-box" onclick="selectTime(this, '17:00-22:00')">
+            <strong>17:00 - 22:00</strong>
+            <div class="text-muted small">Akşam</div>
+        </div>
+    </div>
 
-                <hr class="mt-4">
+</div>
 
-                <div class="mt-4">
-                    <h4>Yorumlar</h4>
-                    <div id="reviewsArea">Yükleniyor...</div>
-                </div>
+<input type="hidden" id="timeSelect" value="08:00-12:00">
 
-            `;
 
-            loadReviews(id);
 
-            /// Şehir seçimi dinamik doldur
-            let citySelect = document.getElementById("citySelect");
-            window.cityList.forEach(city => {
-                citySelect.innerHTML += `<option value="${city}">${city}</option>`;
-            });
+<input type="date" id="calendarInput"
+       class="form-control mt-2"
+       style="display:none;">
 
-        });
+
+<label class="mt-2">Adet:</label>
+<select id="qtySelect" class="form-control">
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+</select>
+
+<button type="button"
+        class="order-button mt-3"
+        data-product-id="${p.id}"
+        onclick="addToCart(this, true)">
+    🚀 Hemen Sipariş Ver
+</button>
+
+<button type="button"
+        id="addToCartBtn"
+        class="cart-button"
+        data-product-id="${p.id}"
+        onclick="addToCart(this, false)">
+    🛒 Sepete Ekle
+</button>
+
+
+
+
+</div>
+</div>
+
+<hr class="mt-4">
+
+<div class="mt-4">
+    
+<h4>Yorumlar (<span id="reviewCount">0</span>)</h4>
+
+<div class="mb-2">
+    <div id="starRating" class="star-rating">
+        <span data-value="1">★</span>
+        <span data-value="2">★</span>
+        <span data-value="3">★</span>
+        <span data-value="4">★</span>
+        <span data-value="5">★</span>
+    </div>
+</div>
+
+<div class="mt-3">
+    <input id="reviewName" class="form-control mb-2" placeholder="Adınız">
+    <textarea id="reviewText" class="form-control mb-2" placeholder="Yorumunuz"></textarea>
+    <button class="btn btn-success" onclick="sendReview({{ product.id }})">
+        Gönder
+    </button>
+</div>
+
+
+
+
+</div>
+
+<div id="reviewsArea">Yükleniyor...</div>
+</div>
+`;
+
+
+let citySelect = document.getElementById("citySelect");
+citySelect.innerHTML = "<option value=''>Şehir Seçiniz</option>";
+window.cityList.forEach(city => {
+    citySelect.innerHTML += `<option value="${city.name}">${city.name}</option>`;
+});
+loadCities();
+initStarRating();
+loadReviews(id);
+});
 }
 
+function orderProduct() {
 
-// ✔ API'den yorum çekme
-function loadReviews(productId) {
-    fetch(`/api/product/${productId}/reviews/`)
+    if (!window.currentProductId) {
+        alert("Ürün ID bulunamadı!");
+        return;
+    }
+
+    let item = {
+    product_id: window.currentProductId,
+    quantity: document.getElementById("qtySelect").value,
+    delivery_date: document.getElementById("dateSelect").value,
+    delivery_time: document.getElementById("timeSelect").value,
+    city: document.getElementById("citySelect").value
+};
+
+
+    fetch("/api/cart/add/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(item)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert("✅ Ürün sepete eklendi");
+        } else {
+            alert(data.error || "Hata oluştu");
+        }
+    });
+}
+
+function loadReviews(id) {
+    fetch(`/api/product/${id}/reviews/`)
         .then(res => res.json())
         .then(data => {
+            document.getElementById("reviewCount").innerText = data.length;
             let html = "";
+
             if (data.length === 0) {
-                html = `<p>Henüz yorum yok.</p>`;
+                html = "<p class='text-muted'>Henüz yorum yok.</p>";
             } else {
                 data.forEach(r => {
                     html += `
-                        <div class="border p-2 rounded mb-2">
-                            <strong>${r.username}</strong>
+                        <div class="review-card mb-3">
+                            <div class="review-header">
+                                ${renderStars(r.rating)}
+                            </div>
+
+                            <strong class="d-block mt-1">${r.username}</strong>
+
+                            <div class="review-meta mb-2">
+                                ${new Date(r.created_at).toLocaleDateString("tr-TR")}
+                            </div>
+
                             <p>${r.comment}</p>
                         </div>
                     `;
                 });
             }
+
             document.getElementById("reviewsArea").innerHTML = html;
         });
 }
 
 
-// ✔ Sepete API ile ekleme
-function addToCart(id, price) {
+function sendReview(id) {
+    if (selectedRating === 0) {
+        alert("Lütfen yıldız seçiniz");
+        return;
+    }
 
-    let item = {
-        product_id: id,
-        quantity: document.getElementById("qtySelect").value,
-        delivery_date: document.getElementById("dateSelect").value,
-        city: document.getElementById("citySelect").value
-    };
-
-    fetch("/api/cart/add/", {
+    fetch(`/api/product/${id}/reviews/create/`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(item)
-    })
-    .then(r => r.json())
-    .then(d => {
-        alert("Sepete eklendi!");
-    });
-}
-
-
-// ✔ Siparişi anında yönlendirme
-function orderProduct(id) {
-
-    let orderData = {
-        product_id: id,
-        quantity: document.getElementById("qtySelect").value
-    };
-
-    fetch("/api/order/checkout/", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(orderData)
+        body: JSON.stringify({
+            name: document.getElementById("reviewName").value || "Misafir",
+            rating: selectedRating,
+            comment: document.getElementById("reviewText").value
+        })
     })
     .then(res => res.json())
-    .then(data => {
-        window.location = data.payment_url;  // ödeme sayfasına gider
-    });
-}
-fetch("http://127.0.0.1:8000/cities/")
-        .then(res => res.json())
-        .then(data => {
-            const citySelect = document.getElementById("citySelect");
+    .then(() => {
+        document.getElementById("reviewText").value = "";
+        selectedRating = 0;
 
-            data.forEach(city => {
-                const option = document.createElement("option");
-                option.value = city;
-                option.textContent = city;
-                citySelect.appendChild(option);
-            });
+        document.querySelectorAll("#starRating span").forEach(s => {
+            s.classList.remove("active");
         });
 
-        function addToCart(product_id) {
-    let qty = document.getElementById('qty').value;
-
-    fetch("http://127.0.0.1:8000/cart/add/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": "{{ csrf_token }}"
-        },
-        body: JSON.stringify({
-            product_id: product_id,
-            quantity: qty
-        })
-    }).then(res => res.json())
-    .then(data => {
-        alert(data.message)
+        loadReviews(id);
     });
 }
+function renderStars(rating) {
+    let stars = "";
+    for (let i = 1; i <= 5; i++) {
+        stars += `<span style="color:${i <= rating ? '#f5b301' : '#ccc'}">★</span>`;
+    }
+    return stars;
+}
+
+
+function toggleCalendar() {
+    const select = document.getElementById("dateSelect").value;
+    document.getElementById("calendarInput").style.display =
+        (select === "calendar") ? "block" : "none";
+}
+
+function addToCart(button, redirect) {
+
+    const productId = button.dataset.productId;
+    if (!productId) {
+        alert("Ürün ID bulunamadı");
+        return;
+    }
+
+    const city = document.getElementById("citySelect")?.value;
+    if (!city) {
+        alert("Lütfen şehir seçiniz");
+        return;
+    }
+
+
+    const dateSelectEl = document.getElementById("dateSelect");
+    const calendarInputEl = document.getElementById("calendarInput");
+
+    let deliveryDate =
+        dateSelectEl.value === "calendar"
+        ? calendarInputEl.value
+        : dateSelectEl.value;
+
+    let item = {
+        product_id: productId,
+        quantity: document.getElementById("qtySelect").value,
+        city: document.getElementById("citySelect").value,
+        delivery_date: deliveryDate,
+        time_range: document.getElementById("timeSelect").value
+    };
+    fetch("/api/cart/add/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(item)
+    })
+ .then(res => res.text())
+.then(text => {
+    let data = {};
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch (e) {
+        console.warn("JSON parse edilemedi:", text);
+    }
+
+    if (!data.success) {
+        alert(data.error || "Hata oluştu");
+        return;
+    }
+
+    if (redirect) {
+        window.location.href = "/sepet/";
+    } else {
+        updateCartCount(1);
+        alert("✅ Ürün sepete eklendi");
+    }
+})
+
+    .catch(err => {
+        console.error("FETCH / JS ERROR:", err);
+        alert("Tarayıcı JS hatası (console'a bak)");
+    });
+}
+
+function selectTime(el, value) {
+    document.querySelectorAll(".time-box").forEach(b => b.classList.remove("active"));
+    el.classList.add("active");
+    document.getElementById("timeSelect").value = value;
+}
+let selectedRating = 0;
+
+function initStarRating() {
+    const stars = document.querySelectorAll("#starRating span");
+
+    stars.forEach(star => {
+        star.onclick = function () {
+            selectedRating = Number(this.dataset.value);
+
+            stars.forEach(s => s.classList.remove("active"));
+
+            stars.forEach(s => {
+                if (Number(s.dataset.value) <= selectedRating) {
+                    s.classList.add("active");
+                }
+            });
+        };
+    });
+}
+function updateCartCount(increment = 1) {
+    const cartCountEl = document.getElementById("cart-count");
+    if (!cartCountEl) return;
+
+    let current = parseInt(cartCountEl.innerText) || 0;
+    cartCountEl.innerText = current + increment;
+}
+
+
 </script>
-
-
 {% endblock %}
+<script src="{% static 'js/product.js' %}"></script>

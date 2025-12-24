@@ -1,0 +1,122 @@
+{% extends "store/base.html" %}
+{% block content %}
+
+<style>
+.payment-box {
+    max-width: 900px;
+    margin: auto;
+    background: #fff;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+
+.payment-title {
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.form-control {
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.pay-btn {
+    background: #2fa54c;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    width: 100%;
+}
+
+.pay-btn:hover {
+    background: #279445;
+}
+
+.summary-box {
+    background: #f9f9f9;
+    border-radius: 14px;
+    padding: 20px;
+}
+</style>
+
+<div class="container mt-4">
+
+    <h2 class="fw-bold mb-4">💳 Ödeme Sayfası</h2>
+
+    <div class="row g-4">
+
+        <!-- SOL: Ödeme Bilgileri -->
+        <div class="col-md-7">
+            <div class="payment-box">
+
+                <h4 class="payment-title">Kart Bilgileri</h4>
+
+                <div class="mb-3">
+                    <label>Kart Üzerindeki İsim</label>
+                    <input type="text" class="form-control" placeholder="Ad Soyad">
+                </div>
+
+                <div class="mb-3">
+                    <label>Kart Numarası</label>
+                    <input type="text" class="form-control" placeholder="1234 5678 9012 3456">
+                </div>
+
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label>Son Kullanma Tarihi</label>
+                        <input type="text" class="form-control" placeholder="AA/YY">
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label>CVV</label>
+                        <input type="password" class="form-control" placeholder="***">
+                    </div>
+                </div>
+
+                <button class="pay-btn mt-3" onclick="payNow()">
+                    🔐 Güvenli Ödeme Yap
+                </button>
+
+            </div>
+        </div>
+
+        <!-- SAĞ: Sipariş Özeti -->
+        <div class="col-md-5">
+            <div class="summary-box">
+
+                <h5 class="fw-bold mb-3">Sipariş Özeti</h5>
+
+                <div class="d-flex justify-content-between">
+                    <span>Ara Toplam</span>
+                    <strong id="subtotal">{{ total|floatformat:2 }} TL</strong>
+                </div>
+
+                <div class="d-flex justify-content-between mt-2">
+                    <span>Teslimat</span>
+                    <strong class="text-success">Ücretsiz</strong>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-between fs-5 fw-bold">
+                    <span>Toplam</span>
+                    <span id="total">{{ total|floatformat:2 }} TL</span>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function payNow() {
+    alert("💳 Ödeme simülasyonu başarılı!\nSiparişiniz alındı.");
+    window.location.href = "/order/success/";
+}
+</script>
+
+{% endblock %}
