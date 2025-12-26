@@ -3,79 +3,159 @@
 
 <style>
 .track-box {
-    max-width: 700px;
+    max-width: 720px;
     margin: auto;
     background: #fff;
-    border-radius: 16px;
-    padding: 30px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    padding: 32px;
+    border-radius: 18px;
+    box-shadow: 0 10px 28px rgba(0,0,0,.08);
 }
 
-.track-step {
+.order-item {
     display: flex;
-    align-items: center;
     gap: 15px;
-    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding: 15px 0;
 }
 
-.track-step.done {
+.order-item:last-child {
+    border-bottom: none;
+}
+
+.order-item img {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid #eee;
+}
+
+.status-badge {
+    background: #e8f8ee;
     color: #2fa54c;
+    padding: 6px 14px;
+    border-radius: 20px;
     font-weight: bold;
+    display: inline-block;
 }
 
-.step-circle {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #ddd;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.track-step.done .step-circle {
-    background: #2fa54c;
-    color: #fff;
+.delivery-info {
+    background: #f1f8ff;
+    border-left: 4px solid #0d6efd;
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 20px;
+    font-size: 14px;
 }
 </style>
 
-<div class="container mt-5">
-
-    <h2 class="fw-bold mb-4 text-center">📦 Sipariş Takibi</h2>
+<div class="container mt-4">
 
     <div class="track-box">
 
-        <div class="track-step done">
-            <div class="step-circle">✓</div>
-            Sipariş Alındı
+        <h3 class="fw-bold mb-3">📦 Sipariş Takibi</h3>
+
+        <div class="mb-3">
+            <label class="fw-bold">Sipariş Numaranız</label>
+            <input id="orderIdInput"
+                   class="form-control"
+                   placeholder="Örn: #7 veya 7">
         </div>
 
-        <div class="track-step done">
-            <div class="step-circle">✓</div>
-            Hazırlanıyor
-        </div>
+        <button class="btn btn-success w-100 mb-3" onclick="trackOrder()">
+            🔍 Siparişi Sorgula
+        </button>
 
-        <div class="track-step">
-            <div class="step-circle">3</div>
-            Kargoya Verildi
-        </div>
-
-        <div class="track-step">
-            <div class="step-circle">4</div>
-            Teslim Edildi
-        </div>
-
-        <hr>
-
-        <p class="text-muted small">
-            Siparişiniz en kısa sürede hazırlanıp teslim edilecektir.
-        </p>
-
-        <a href="/" class="btn btn-success w-100 mt-3">
-            🏠 Ana Sayfaya Dön
-        </a>
+        <div id="resultArea"></div>
 
     </div>
+
 </div>
+
+<script>
+function trackOrder() {
+    let orderId = document.getElementById("orderIdInput").value.trim();
+    orderId = orderId.replace("#", "");
+
+    if (!orderId) {
+        alert("Sipariş numarası giriniz");
+        return;
+    }
+
+    fetch("/api/order/track/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: JSON.stringify({ order_id: orderId })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (!data.success) {
+            document.getElementById("resultArea").innerHTML =
+                `<div class="alert alert-danger mt-3">${data.error}</div>`;
+            return;
+        }
+
+        let html = `
+            <hr>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold mb-0">Sipariş #${data.order.id}</h5>
+                <span class="status-badge">${data.order.status}</span>
+            </div>
+
+            <div class="text-muted mb-3">
+                📅 Sipariş Tarihi: ${data.order.created_at}
+            </div>
+        `;
+
+        data.items.forEach(i => {
+            html += `
+                <div class="order-item">
+                    <img src="${i.image}">
+                    <div>
+                        <div class="fw-bold">${i.product}</div>
+                        <div class="text-muted small">
+                            ${i.quantity} adet × ${i.price} TL
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+            <div class="fw-bold fs-5 text-end mt-3">
+                Toplam: ${data.order.total} TL
+            </div>
+
+            <div class="delivery-info">
+                🚚 Siparişiniz, sipariş tarihinden itibaren
+                <strong>3–7 iş günü</strong> içerisinde teslim edilecektir.
+            </div>
+        `;
+
+        document.getElementById("resultArea").innerHTML = html;
+    })
+    .catch(() => {
+        document.getElementById("resultArea").innerHTML =
+            `<div class="alert alert-danger mt-3">Sunucu hatası oluştu</div>`;
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        document.cookie.split(";").forEach(cookie => {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + "=")) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            }
+        });
+    }
+    return cookieValue;
+}
+</script>
 
 {% endblock %}

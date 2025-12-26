@@ -1,4 +1,6 @@
-CREATE PROCEDURE sp_CheckStock
+USE CicekProje
+GO
+CREATE OR ALTER PROCEDURE sp_CheckStock
     @ProductID INT,
     @Qty INT
 AS
@@ -15,3 +17,5 @@ BEGIN
         SELECT 1 AS IsAvailable
 END
 GO
+
+/*sipariþ öncesi stok yeterli mi?*/

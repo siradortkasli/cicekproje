@@ -1,14 +1,24 @@
-CREATE PROCEDURE sp_CalculateCartTotal
-    @CartID INT
+USE CicekProje
+GO
+ALTER FUNCTION fn_IsStockAvailable
+(
+    @ProductID INT,
+    @Qty INT
+)
+RETURNS BIT
 AS
 BEGIN
-    DECLARE @TotalPrice DECIMAL(10,2)
+    DECLARE @Result BIT
 
-    SELECT @TotalPrice = SUM(p.price * ci.qty)
-    FROM store_cartitem ci
-    JOIN store_product p ON ci.product_id = p.id
-    WHERE ci.cart_id = @CartID
+    IF EXISTS (
+        SELECT 1
+        FROM store_product
+        WHERE id = @ProductID AND stock >= @Qty
+    )
+        SET @Result = 1
+    ELSE
+        SET @Result = 0
 
-    SELECT ISNULL(@TotalPrice, 0) AS TotalPrice
+    RETURN @Result
 END
-GO
+/*ürün sepete eklenmeden önce kontrol*/

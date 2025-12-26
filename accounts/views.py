@@ -33,7 +33,7 @@ def login_view(request):
             return redirect("login")
 
         login(request, user)
-        return redirect("index")
+        return redirect("/")
 
     return render(request, "accounts/login.html")
 
@@ -68,9 +68,9 @@ def register_view(request):
         )
         return redirect("login")
 
-    return render(request, "accounts/register.html")
+    return render(request, "accounts/login.html")
 
 
 def logout_view(request):
     logout(request)
-    return redirect("index")
+    return redirect("/")

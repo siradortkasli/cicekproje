@@ -1,17 +1,16 @@
 USE CicekProje
 GO
-
-CREATE PROCEDURE sp_AddToCart
-    @CartID INT,
-    @ProductID INT,
-    @Qty INT,
-    @Package NVARCHAR(50),
-    @DeliveryDate NVARCHAR(20)
+ALTER FUNCTION fn_GetCartTotal (@CartID INT)
+RETURNS DECIMAL(10,2)
 AS
 BEGIN
-    INSERT INTO store_cartitem
-        (cart_id, product_id, qty, package, delivery_date)
-    VALUES
-        (@CartID, @ProductID, @Qty, @Package, @DeliveryDate)
+    DECLARE @Total DECIMAL(10,2)
+
+    SELECT @Total = SUM(p.price * ci.qty)
+    FROM store_cartitem ci
+    JOIN store_product p ON ci.product_id = p.id
+    WHERE ci.cart_id = @CartID
+
+    RETURN ISNULL(@Total, 0)
 END
-GO
+/*Sepet Toplamýný Hesapla*/

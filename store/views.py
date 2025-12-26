@@ -170,22 +170,11 @@ def get_cart(request):
 
     return JsonResponse({"cart": data})
 
-@csrf_exempt
-def order_checkout(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-
-        # Normalde DB’ye order kaydedilir
-        return JsonResponse({
-            "payment_url": f"/payment/?cart={data['cart_id']}"
-        })
-
 @require_POST
 def complete_order(request, cart_id):
     try:
         with connection.cursor() as cursor:
             cursor.execute("EXEC sp_CreateOrder %s", [cart_id])
-
         return JsonResponse({
             "status": "success",
             "message": "Sipariş başarıyla oluşturuldu"
@@ -199,35 +188,39 @@ def complete_order(request, cart_id):
     
 @csrf_exempt
 def checkout(request):
-    if request.method == "POST":
-        cart = request.session.get("cart", [])
+    if request.method != "POST":
+        return JsonResponse({"success": False})
 
-        if not cart:
-            return JsonResponse({"error": "Sepet boş"})
+    cart = request.session.get("cart", [])
 
-        total = sum(item["price"] * item["quantity"] for item in cart)
+    if not cart:
+        return JsonResponse({
+            "success": False,
+            "error": "Sepet boş"
+        })
 
-        order = Order.objects.create(
-            total_price=total
+    total = sum(item["price"] * item["quantity"] for item in cart)
+
+    order = Order.objects.create(
+        total_price=total
+    )
+
+    for item in cart:
+        OrderItem.objects.create(
+            order=order,
+            product_id=item["product_id"],
+            quantity=item["quantity"],
+            price=item["price"]
         )
 
-        for item in cart:
-            OrderItem.objects.create(
-    order=order,
-    product_id=item["product_id"],
-    quantity=item["quantity"],
-    price=item["price"],
-    city=item.get("city"),
-    delivery_date=item.get("delivery_date"),
-    time_range=item.get("time_range")
-)
+    request.session["cart"] = []
 
-        request.session["cart"] = []
+    return JsonResponse({
+        "success": True,
+        "redirect_url": f"/order/success/{order.id}/"
+    })
 
-        return JsonResponse({
-            "success": True,
-           "redirect_url": f"/order/success/{order.id}/"
-        })
+
 @csrf_exempt
 def order_single(request):
     if request.method == "POST":
@@ -306,13 +299,110 @@ def update_quantity(request):
 def checkout_page(request):
     cart = request.session.get("cart", [])
     total = sum(item["price"] * item["quantity"] for item in cart)
-
+    print("🛒 CHECKOUT CART:", cart) 
     return render(request, "store/checkout.html", {
-        "total": total
+        "total": total,
+        "cart" : cart
     })
 
-def order_success(request):
-    request.session["cart"] = []  # sepeti temizle
-    return render(request, "store/order_success.html")
+def order_success(request, order_id):
+    order = Order.objects.get(id=order_id)
+    items = order.items.all()  # related_name="items"
+
+    return render(request, "store/order_success.html", {
+        "order": order,
+        "items": items
+    })
+
 def order_tracking(request):
     return render(request, "store/order_tracking.html")
+@csrf_exempt
+def payment_complete(request):
+    if request.method != "POST":
+        return JsonResponse({"success": False})
+
+    cart = request.session.get("cart", [])
+    if not cart:
+        return JsonResponse({"success": False, "error": "Sepet boş"})
+
+    total = sum(item["price"] * item["quantity"] for item in cart)
+
+    # ✅ ÖDEME BAŞARILI KABUL EDİYORUZ (simülasyon)
+    order = Order.objects.create(total_price=total)
+
+    for item in cart:
+        OrderItem.objects.create(
+            order=order,
+            product_id=item["product_id"],
+            quantity=item["quantity"],
+            price=item["price"],
+            city=item.get("city"),
+            delivery_date=item.get("delivery_date"),
+            time_range=item.get("time_range")
+        )
+
+    # 🧹 sepeti temizle
+    request.session["cart"] = []
+    request.session.modified = True
+
+    return JsonResponse({
+        "success": True,
+        "order_id": order.id
+    })
+@csrf_exempt
+def order_track_api(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "error": "Geçersiz istek"
+        })
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({
+            "success": False,
+            "error": "Geçersiz veri"
+        })
+
+    order_id = data.get("order_id")
+
+    if not order_id:
+        return JsonResponse({
+            "success": False,
+            "error": "Sipariş numarası girilmedi"
+        })
+
+    try:
+        order = Order.objects.get(id=order_id)
+    except Order.DoesNotExist:
+        return JsonResponse({
+            "success": False,
+            "error": "Sipariş bulunamadı"
+        })
+
+    items_data = []
+    for item in order.items.all():
+        items_data.append({
+            "product": item.product.name,
+            "quantity": item.quantity,
+            "price": float(item.product.price),
+            "city": order.city,  # ✅ şehir Order'dan gelir
+            "delivery_date": (
+                order.created_at.strftime("%d.%m.%Y")
+                + " tarihinden itibaren 3–7 iş günü"
+            ),
+            "time_range": getattr(item, "time_range", ""),
+            "image": item.product.image_url if hasattr(item.product, "image_url") else ""
+        })
+
+    return JsonResponse({
+        "success": True,
+        "order": {
+            "id": order.id,
+            "total": float(order.total_price),
+            "created_at": order.created_at.strftime("%d.%m.%Y %H:%M"),
+            "status": order.status if hasattr(order, "status") else "Hazırlanıyor"
+        },
+        "items": items_data
+    })

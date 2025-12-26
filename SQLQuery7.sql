@@ -1,13 +1,16 @@
 USE CicekProje
 GO
-
-CREATE TRIGGER trg_DeactivateProductIfOutOfStock
-ON store_product
-AFTER UPDATE
+CREATE OR ALTER PROCEDURE sp_CreateOrder
+    @TotalPrice DECIMAL(10,2),
+    @City NVARCHAR(50),
+    @DeliverDate DATE,
+    @TimeRange NVARCHAR(50)
 AS
 BEGIN
-    UPDATE store_product
-    SET is_active = 0
-    WHERE stock <= 0
+    INSERT INTO store_order
+        (created_at, total_price, city, delivery_date, time_range)
+    VALUES
+        (GETDATE(), @TotalPrice, @City, @DeliverDate, @TimeRange)
 END
 GO
+/*sipariþ oluþtur*/

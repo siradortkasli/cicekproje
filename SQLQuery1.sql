@@ -1,11 +1,15 @@
 USE CicekProje
 GO
-
-CREATE PROCEDURE sp_CreateOrder
-    @CartID INT
+ALTER VIEW vw_OrderDetails
 AS
-BEGIN
-    INSERT INTO store_order (cart_id, status, created_at)
-    VALUES (@CartID, 'Completed', GETDATE())
-END
-GO
+SELECT
+    o.id AS order_id,
+    o.created_at,
+    p.name AS product_name,
+    oi.quantity,
+    p.price,
+    (oi.quantity * p.price) AS total_price
+FROM store_order o
+JOIN store_orderitem oi ON o.id = oi.order_id
+JOIN store_product p ON oi.product_id = p.id
+/*Sipariþ + ürün + adet + fiyat + toplam tek yerden gelsin*/

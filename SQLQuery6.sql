@@ -1,15 +1,14 @@
 USE CicekProje
 GO
-
-CREATE TRIGGER trg_DecreaseStockAfterOrder
-ON store_order
-AFTER INSERT
+CREATE OR ALTER PROCEDURE sp_CalculateCartTotal
+    @CartID INT
 AS
 BEGIN
-    UPDATE p
-    SET p.stock = p.stock - ci.qty
-    FROM store_product p
-    INNER JOIN store_cartitem ci ON p.id = ci.product_id
-    INNER JOIN inserted i ON ci.cart_id = i.cart_id
+    SELECT ISNULL(SUM(p.price * ci.qty), 0) AS TotalPrice
+    FROM store_cartitem ci
+    JOIN store_product p ON ci.product_id = p.id
+    WHERE ci.cart_id = @CartID
 END
 GO
+
+/*sepet toplamý hesaplamak*/

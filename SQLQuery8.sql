@@ -1,14 +1,17 @@
-CREATE TRIGGER trg_PreventNegativeStock
-ON store_product
-AFTER UPDATE
+USE CicekProje
+GO
+CREATE OR ALTER PROCEDURE sp_ListOrders
 AS
 BEGIN
-    IF EXISTS (
-        SELECT 1 FROM store_product WHERE stock < 0
-    )
-    BEGIN
-        ROLLBACK TRANSACTION
-        RAISERROR ('Stok miktarý 0 altýna düþemez!', 16, 1)
-    END
+    SELECT
+        id,
+        created_at,
+        total_price,
+        city,
+        delivery_date,
+        time_range
+    FROM store_order
+    ORDER BY created_at DESC
 END
 GO
+/*sipariþ listele*/
