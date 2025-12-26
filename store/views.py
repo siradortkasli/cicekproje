@@ -113,21 +113,7 @@ def add_to_cart(request):
     city = data.get("city")
     delivery_date = data.get("delivery_date")
     time_range = data.get("time_range")
-   
-# 🔥 EN ÜSTE KOY
-    image_url = product.image_url
-
-# Eğer ProductImage varsa onu tercih et
-    image = product.images.first()
-    if image and image.image_url:
-     image_url = image.image_url
-
-    else:
-      image_url = "https://via.placeholder.com/120"
-
-
-
-
+    image_url = product.image_url or "https://via.placeholder.com/120"
     cart = request.session.get("cart", [])
 
     
@@ -210,7 +196,8 @@ def checkout(request):
             order=order,
             product_id=item["product_id"],
             quantity=item["quantity"],
-            price=item["price"]
+            price=item["price"],
+            image_url=item.get("image_url")
         )
 
     request.session["cart"] = []
@@ -242,17 +229,14 @@ def order_single(request):
             order=order,
             product=product,
             quantity=quantity,
-            price=product.price
+            price=product.price,
+            image_url=product.image_url
         )
 
         return JsonResponse({
             "success": True,
             "payment_url": f"/order/success/{order.id}/"
         })
-def order_success(request, order_id):
-    order = Order.objects.get(id=order_id)
-    return render(request, "store/order_success.html", {"order": order})
-
 def cart_view(request):
     cart = request.session.get("cart", [])
 
@@ -338,7 +322,8 @@ def payment_complete(request):
             price=item["price"],
             city=item.get("city"),
             delivery_date=item.get("delivery_date"),
-            time_range=item.get("time_range")
+            time_range=item.get("time_range"),
+            image_url=item.get("image_url") 
         )
 
     # 🧹 sepeti temizle
@@ -393,7 +378,7 @@ def order_track_api(request):
                 + " tarihinden itibaren 3–7 iş günü"
             ),
             "time_range": getattr(item, "time_range", ""),
-            "image": item.product.image_url if hasattr(item.product, "image_url") else ""
+            "image": item.image_url if hasattr(item.product, "image_url") else ""
         })
 
     return JsonResponse({

@@ -75,7 +75,7 @@
 
         {% for item in items %}
         <div class="product-row">
-            <img src="{{ item.product.image.url }}">
+            <img src="{{ item.image_url|default:'https://via.placeholder.com/120' }}">
             <div class="flex-grow-1">
                 <div class="fw-bold">{{ item.product.name }}</div>
                 <div class="text-muted small">
