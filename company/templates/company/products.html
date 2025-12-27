@@ -1,0 +1,64 @@
+{% extends "company/cbase.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Ürünlerim</h2>
+        <a href="{% url 'company_product_add' %}" class="btn btn-success">
+            ➕ Yeni Ürün Ekle
+        </a>
+    </div>
+
+    {% if products %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Ürün Adı</th>
+                    <th>Fiyat</th>
+                    <th>Stok</th>
+                    <th>Kategori</th>
+                    <th>Onay Durumu</th>
+                    <th>Oluşturulma</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>
+                        <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+                             style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px; margin-right: 10px;">
+                        {{ product.name }}
+                    </td>
+                    <td>{{ product.price }} TL</td>
+                    <td>{{ product.stock }}</td>
+                    <td>{{ product.category.name|default:"-" }}</td>
+                    <td>
+                        {% if product.is_approved %}
+                            <span class="badge bg-success">✅ Onaylandı</span>
+                        {% else %}
+                            <span class="badge bg-warning">⏳ Onay Bekliyor</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ product.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>
+                        <a href="{% url 'company_product_edit' product.id %}" 
+                           class="btn btn-sm btn-outline-primary">
+                            ✏️ Düzenle
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Henüz ürün eklemediniz. <a href="{% url 'company_product_add' %}">İlk ürününüzü ekleyin</a>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+

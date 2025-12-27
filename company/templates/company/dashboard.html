@@ -1,0 +1,49 @@
+{% extends "company/cbase.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2>Hoş geldin {{ company.name }}</h2>
+
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3>{{ total_products }}</h3>
+                    <p class="text-muted">Toplam Ürün</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-success">{{ approved_products }}</h3>
+                    <p class="text-muted">Onaylanan Ürün</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ pending_products }}</h3>
+                    <p class="text-muted">Onay Bekleyen</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3>{{ total_orders }}</h3>
+                    <p class="text-muted">Toplam Sipariş</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'company_products' %}" class="btn btn-primary me-2">Ürünlerim</a>
+        <a href="{% url 'company_product_add' %}" class="btn btn-success me-2">Yeni Ürün Ekle</a>
+        <a href="{% url 'company_orders' %}" class="btn btn-info">Siparişlerim</a>
+    </div>
+</div>
+
+{% endblock %}

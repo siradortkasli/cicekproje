@@ -254,6 +254,7 @@ document.getElementById("productDetailArea").innerHTML = `
 
 <div class="col-md-6">
 
+${p.company_name ? `<small class="text-muted d-block mb-2">🏢 ${p.company_name}</small>` : ''}
 <h3 class="fw-bold">${p.name}</h3>
 <span class="badge-custom mb-2">Aynı Gün Teslim</span>
 

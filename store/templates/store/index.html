@@ -116,6 +116,7 @@ window.loadProducts = function(searchValue = "", categoryId = "") {
             <div class="card h-100 shadow-sm border-0">
               <img src="${imageUrl}" class="card-img-top" style="height:250px; object-fit:cover;">
               <div class="card-body text-center">
+                ${product.company_name ? `<small class="text-muted d-block mb-1">🏢 ${product.company_name}</small>` : ''}
                 <h6 class="fw-bold">${product.name}</h6>
                 <p class="text-danger fw-bold">${product.price} TL</p>
                 <a href="/urun/${product.id}/" class="btn btn-success w-100">İncele</a>

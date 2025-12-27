@@ -1,0 +1,263 @@
+{% extends "company/cbase.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2>Siparişlerim</h2>
+
+    {% if order_items %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Sipariş No</th>
+                    <th>Ürün</th>
+                    <th>Miktar</th>
+                    <th>Fiyat</th>
+                    <th>Müşteri Bilgileri</th>
+                    <th>Adres</th>
+                    <th>Sipariş Durumu</th>
+                    <th>Hazırlık Fotoğrafı</th>
+                    <th>Kullanıcı Onayı</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order_items %}
+                <tr>
+                    <td>#{{ item.order.id }}</td>
+                    <td>
+                        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" 
+                             style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px; margin-right: 10px;">
+                        {{ item.product.name }}
+                    </td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.price }} TL</td>
+                    <td>
+                        {% if item.order.customer_name %}
+                            <strong>{{ item.order.customer_name }}</strong><br>
+                        {% endif %}
+                        {% if item.order.phone_number %}
+                            <small class="text-muted">📞 {{ item.order.phone_number }}</small>
+                        {% endif %}
+                        {% if item.order.user %}
+                            <br><small class="text-muted">👤 {{ item.order.user.username }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.order.city %}
+                            <strong>{{ item.order.city }}</strong><br>
+                        {% endif %}
+                        {% if item.order.address %}
+                            <small class="text-muted">{{ item.order.address|truncatewords:10 }}</small>
+                        {% else %}
+                            <small class="text-muted">-</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {% if item.order.status == 'PREPARING' %}bg-warning
+                            {% elif item.order.status == 'WAITING_APPROVAL' %}bg-info
+                            {% elif item.order.status == 'SHIPPED' %}bg-primary
+                            {% elif item.order.status == 'DELIVERED' %}bg-success
+                            {% endif %}">
+                            {{ item.order.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if item.preparation_image %}
+                            <img src="{{ item.preparation_image.url }}" 
+                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px; cursor: pointer;"
+                                 onclick="showImageModal('{{ item.preparation_image.url }}')">
+                        {% else %}
+                            <input type="file" 
+                                   id="prep_image_{{ item.id }}"
+                                   accept="image/*" 
+                                   onchange="uploadPreparationImage({{ item.id }}, this)"
+                                   class="form-control form-control-sm" 
+                                   style="width: 150px;">
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.is_user_approved %}
+                            <span class="badge bg-success">✅ Onaylandı</span>
+                        {% elif item.preparation_image %}
+                            <span class="badge bg-warning">⏳ Bekliyor</span>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <select class="form-select form-select-sm" 
+                                    onchange="updateOrderStatus({{ item.order.id }}, this.value)"
+                                    style="width: 180px;">
+                                <option value="PREPARING" {% if item.order.status == 'PREPARING' %}selected{% endif %}>
+                                    Hazırlanıyor
+                                </option>
+                                <option value="WAITING_APPROVAL" {% if item.order.status == 'WAITING_APPROVAL' %}selected{% endif %}>
+                                    Kullanıcı Onayı Bekleniyor
+                                </option>
+                                <option value="SHIPPED" {% if item.order.status == 'SHIPPED' %}selected{% endif %}>
+                                    Yola Çıktı
+                                </option>
+                                <option value="DELIVERED" {% if item.order.status == 'DELIVERED' %}selected{% endif %}>
+                                    Teslim Edildi
+                                </option>
+                            </select>
+                            <a href="{% url 'company_order_edit' item.order.id %}" 
+                               class="btn btn-info btn-sm" title="Siparişi Düzenle">
+                                ✏️ Düzenle
+                            </a>
+                            {% if not item.order.is_cancelled %}
+                            <button class="btn btn-danger btn-sm" 
+                                    onclick="cancelOrder({{ item.order.id }})"
+                                    title="Siparişi İptal Et">
+                                ❌ İptal Et
+                            </button>
+                            {% else %}
+                            <span class="badge bg-danger">İptal Edildi</span>
+                            {% endif %}
+                            {% if item.order.status == 'SHIPPED' %}
+                            <button class="btn btn-success btn-sm" 
+                                    onclick="markAsDelivered({{ item.order.id }})"
+                                    title="Teslim Edildi Olarak İşaretle">
+                                ✅ Teslim Et
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Henüz sipariş bulunmamaktadır.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hazırlık Fotoğrafı</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" style="max-width: 100%; height: auto;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showImageModal(imageUrl) {
+    document.getElementById('modalImage').src = imageUrl;
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+
+function updateOrderStatus(orderId, status) {
+    fetch(`/company/orders/${orderId}/update-status/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ status: status })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Hata: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu');
+    });
+}
+
+function markAsDelivered(orderId) {
+    if (!confirm('Bu siparişi teslim edildi olarak işaretlemek istediğinize emin misiniz?')) {
+        return;
+    }
+    
+    updateOrderStatus(orderId, 'DELIVERED');
+}
+
+function cancelOrder(orderId) {
+    let reason = prompt('Siparişi iptal etme nedeninizi yazın:');
+    if (!reason || reason.trim() === '') {
+        alert('İptal nedeni zorunludur.');
+        return;
+    }
+    
+    if (!confirm('Bu siparişi iptal etmek istediğinize emin misiniz?')) {
+        return;
+    }
+    
+    fetch(`/company/orders/${orderId}/cancel/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ cancellation_reason: reason })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Hata: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu');
+    });
+}
+
+function uploadPreparationImage(orderItemId, inputElement) {
+    const file = inputElement.files[0];
+    if (!file) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('preparation_image', file);
+    
+    fetch(`/company/orders/${orderItemId}/upload-image/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Hata: ' + data.error);
+            inputElement.value = ''; // Reset input
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu');
+        inputElement.value = ''; // Reset input
+    });
+}
+</script>
+
+{% endblock %}
+

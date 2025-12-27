@@ -25,14 +25,11 @@ def login_view(request):
             messages.error(request, "Şifre yanlış!")
             return redirect("login")
 
-        if not user.is_active:
-            messages.warning(
-                request,
-                "Hesabınız henüz admin tarafından onaylanmadı."
-            )
-            return redirect("login")
-
+        # Normal kullanıcılar için aktiflik kontrolü yok (kayıt olduklarında direkt aktif)
+        # Sadece firma kullanıcıları için kontrol yapılır (company_login'de)
+        # Firma kullanıcıları company_login kullanmalı, burada kontrol etmiyoruz
         login(request, user)
+        # Giriş yaptıktan sonra anasayfaya yönlendir (index view kontrol edecek)
         return redirect("/")
 
     return render(request, "accounts/login.html")
@@ -58,13 +55,14 @@ def register_view(request):
             password=password
         )
 
-        user.is_active = False
-        user.is_approved = False
+        # Normal kullanıcılar için admin onayı gerekmez, direkt aktif
+        user.is_active = True
+        user.is_approved = True
         user.save()
 
         messages.success(
             request,
-            "Kayıt başarılı. Admin onayından sonra giriş yapabilirsiniz."
+            "Kayıt başarılı! Giriş yapabilirsiniz."
         )
         return redirect("login")
 
@@ -73,4 +71,4 @@ def register_view(request):
 
 def logout_view(request):
     logout(request)
-    return redirect("/")
+    return redirect("login")

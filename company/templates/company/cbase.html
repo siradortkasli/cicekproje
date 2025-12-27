@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firma Paneli - ÇiçekSepeti</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .sidebar .nav-link {
+            color: #333;
+            padding: 0.75rem 1rem;
+        }
+        .sidebar .nav-link:hover {
+            background-color: #e9ecef;
+        }
+        .sidebar .nav-link.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">🏢 Firma Paneli</span>
+            <div class="d-flex align-items-center gap-2">
+                <a href="/" class="btn btn-success btn-sm">
+                    <i class="bi bi-house-door"></i> ÇiçekSepeti'ne Dön
+                </a>
+                <span class="text-light me-2">{{ company.name|default:"Firma" }}</span>
+                <a href="{% url 'company_logout' %}" class="btn btn-outline-light btn-sm">Çıkış</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 sidebar p-0">
+                <nav class="nav flex-column">
+                    <a class="nav-link" href="{% url 'company_dashboard' %}">
+                        📊 Dashboard
+                    </a>
+                    <a class="nav-link" href="{% url 'company_products' %}">
+                        📦 Ürünlerim
+                    </a>
+                    <a class="nav-link" href="{% url 'company_product_add' %}">
+                        ➕ Ürün Ekle
+                    </a>
+                    <a class="nav-link" href="{% url 'company_orders' %}">
+                        🛒 Siparişlerim
+                    </a>
+                </nav>
+            </div>
+            <div class="col-md-10 p-4">
+                {% block content %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

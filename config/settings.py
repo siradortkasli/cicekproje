@@ -35,6 +35,7 @@ AUTH_USER_MODEL = "accounts.User"
 INSTALLED_APPS = [
     'store',
     'accounts',
+    'company',
     'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',

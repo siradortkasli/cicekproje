@@ -65,33 +65,44 @@
 </head>
 <body>
 
+
 <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm py-3">
     <div class="container">
         <a class="navbar-brand text-success fw-bold fs-3 d-flex align-items-center" href="/">
             <i class="bi bi-flower1 me-2" style="font-size: 1.5rem;"></i> ÇiçekSepeti
         </a>
         
-<form id="searchForm" class="d-none d-lg-flex mx-auto w-50" role="search">
-    <input
-        id="searchInput"
-        class="form-control me-0 border-success"
-        type="search"
-        placeholder="Marka, ürün veya kategori ara"
-    >
-    <button id="searchBtn" class="btn btn-success" type="button">
+        {% if request.path == "/" %}
+        <form id="searchForm" class="d-none d-lg-flex mx-auto w-50" role="search">
+            <input
+                id="searchInput"
+                class="form-control me-0 border-success"
+                type="search"
+                placeholder="Marka, ürün veya kategori ara"
+            >
+            <button id="searchBtn" class="btn btn-success" type="button">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+        {% endif %}
 
-        <i class="bi bi-search"></i>
-    </button>
-</form>
-
-
-        <div class="d-flex align-items-center">
-            <a class="btn btn-light text-secondary me-3 d-none d-lg-block" href="{% url 'order_tracking' %}">
+        <div class="d-flex align-items-center gap-2 {% if request.path != '/' %}ms-auto{% endif %}">
+            <a href="/firma/login/" class="btn btn-outline-dark btn-sm">
+                Firma Girişi
+            </a>
+            
+            <a class="btn btn-light text-secondary btn-sm" href="{% url 'order_tracking' %}">
                 <i class="bi bi-truck me-1"></i> Sipariş Takibi
             </a>
             
-            <div class="dropdown me-3 d-none d-lg-block">
-                 <a class="btn btn-light text-secondary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            {% if user.is_authenticated %}
+            <a class="btn btn-light text-secondary btn-sm" href="{% url 'my_orders' %}">
+                <i class="bi bi-bag-check me-1"></i> Siparişlerim
+            </a>
+            {% endif %}
+            
+            <div class="dropdown">
+                <a class="btn btn-light text-secondary btn-sm dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-person me-1"></i> Üyelik
                 </a>
                 <ul class="dropdown-menu">
@@ -105,16 +116,12 @@
                 </ul>
             </div>
             
-            <a class="btn btn-success" href="/sepet/">
-    <i class="bi bi-cart me-1"></i>
-    <span 
-    id="cart-count"
-    class="badge bg-white text-success rounded-pill">
-    {{ request.session.cart|length|default:0 }}
-</span>
-
-</a>
-
+            <a class="btn btn-success btn-sm" href="/sepet/">
+                <i class="bi bi-cart me-1"></i>
+                <span id="cart-count" class="badge bg-white text-success rounded-pill">
+                    {{ request.session.cart|length|default:0 }}
+                </span>
+            </a>
         </div>
     </div>
 </nav>

@@ -40,6 +40,7 @@ window.loadProducts = function(searchText = "", categoryId = "") {
                              class="card-img-top" alt="${p.name}">
                         
                         <div class="card-body">
+                            ${p.company_name ? `<small class="text-muted d-block mb-1">🏢 ${p.company_name}</small>` : ''}
                             <h5 class="card-title">${p.name}</h5>
                             <p class="text-success fw-bold">${p.price} TL</p>
 

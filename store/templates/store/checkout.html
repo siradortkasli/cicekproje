@@ -268,13 +268,20 @@ function payNow() {
     }
 
     /* ✅ HER ŞEY TAMSA */
+    const orderData = {
+        customer_name: document.getElementById("fullName").value,
+        phone_number: document.getElementById("phone").value,
+        address: document.getElementById("address").value,
+        city: document.getElementById("city").value
+    };
+    
     fetch("/api/order/checkout/", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCookie("csrftoken")
         },
-        body: JSON.stringify({})
+        body: JSON.stringify(orderData)
     })
     .then(res => res.json())
     .then(data => {

@@ -3,7 +3,7 @@
 
 <style>
 .track-box {
-    max-width: 720px;
+    max-width: 900px;
     margin: auto;
     background: #fff;
     padding: 32px;
@@ -39,20 +39,90 @@
     display: inline-block;
 }
 
-.delivery-info {
-    background: #f1f8ff;
-    border-left: 4px solid #0d6efd;
-    padding: 12px;
+.status-steps {
+    display: flex;
+    justify-content: space-between;
+    margin: 30px 0;
+    position: relative;
+    padding: 20px 0;
+}
+
+.status-steps::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #e0e0e0;
+    z-index: 0;
+}
+
+.status-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+.status-step-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin: 0 auto 10px;
+    transition: all 0.3s;
+}
+
+.status-step.active .status-step-circle {
+    background: #0d6efd;
+    color: white;
+    transform: scale(1.1);
+}
+
+.status-step.completed .status-step-circle {
+    background: #28a745;
+    color: white;
+}
+
+.status-step-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #666;
+}
+
+.status-step.active .status-step-label,
+.status-step.completed .status-step-label {
+    color: #333;
+    font-weight: bold;
+}
+
+.preparation-image-box {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f8f9fa;
     border-radius: 10px;
-    margin-top: 20px;
-    font-size: 14px;
+}
+
+.preparation-image-box img {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid #ddd;
+}
+
+.preparation-image-box img:hover {
+    border-color: #0d6efd;
 }
 </style>
 
 <div class="container mt-4">
-
     <div class="track-box">
-
         <h3 class="fw-bold mb-3">📦 Sipariş Takibi</h3>
 
         <div class="mb-3">
@@ -67,9 +137,22 @@
         </button>
 
         <div id="resultArea"></div>
-
     </div>
+</div>
 
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hazırlık Fotoğrafı</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" style="max-width: 100%; height: auto;">
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -92,7 +175,6 @@ function trackOrder() {
     })
     .then(res => res.json())
     .then(data => {
-
         if (!data.success) {
             document.getElementById("resultArea").innerHTML =
                 `<div class="alert alert-danger mt-3">${data.error}</div>`;
@@ -101,25 +183,94 @@ function trackOrder() {
 
         let html = `
             <hr>
-            <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold mb-0">Sipariş #${data.order.id}</h5>
-                <span class="status-badge">${data.order.status}</span>
+                <span class="status-badge ${data.order.is_cancelled ? 'bg-danger text-white' : ''}">${data.order.status_display}</span>
             </div>
 
-            <div class="text-muted mb-3">
+            <div class="text-muted mb-4">
                 📅 Sipariş Tarihi: ${data.order.created_at}
             </div>
+            
+            ${data.order.is_cancelled ? `
+                <div class="alert alert-danger mb-4">
+                    <h6 class="fw-bold">❌ Sipariş İptal Edildi</h6>
+                    <p class="mb-0"><strong>İptal Nedeni:</strong> ${data.order.cancellation_reason}</p>
+                </div>
+            ` : ''}
+            
+            ${data.order.address || data.order.customer_name || data.order.phone_number ? `
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="fw-bold mb-0">📍 Teslimat Bilgileri</h6>
+                    </div>
+                    <div class="card-body">
+                        ${data.order.customer_name ? `<p class="mb-2"><strong>Alıcı:</strong> ${data.order.customer_name}</p>` : ''}
+                        ${data.order.phone_number ? `<p class="mb-2"><strong>Telefon:</strong> ${data.order.phone_number}</p>` : ''}
+                        ${data.order.city ? `<p class="mb-2"><strong>Şehir:</strong> ${data.order.city}</p>` : ''}
+                        ${data.order.address ? `<p class="mb-0"><strong>Adres:</strong> ${data.order.address}</p>` : ''}
+                    </div>
+                </div>
+            ` : ''}
+
+            <!-- Sipariş Durumu Adımları -->
+            <div class="status-steps">
         `;
 
-        data.items.forEach(i => {
+        data.status_steps.forEach((step, index) => {
+            let stepClass = "";
+            if (step.completed) {
+                stepClass = "completed";
+            } else if (step.active) {
+                stepClass = "active";
+            }
+
+            html += `
+                <div class="status-step ${stepClass}">
+                    <div class="status-step-circle">${step.icon}</div>
+                    <div class="status-step-label">${step.label}</div>
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+
+        // Ürünler
+        data.items.forEach(item => {
             html += `
                 <div class="order-item">
-                    <img src="${i.image}">
-                    <div>
-                        <div class="fw-bold">${i.product}</div>
+                    <img src="${item.image || 'https://via.placeholder.com/120'}">
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">${item.product}</div>
                         <div class="text-muted small">
-                            ${i.quantity} adet × ${i.price} TL
+                            ${item.quantity} adet × ${item.price} TL
                         </div>
+                        ${item.company_name ? `<div class="text-muted small">🏢 Firma: ${item.company_name}</div>` : ''}
+                        
+                        ${item.preparation_image ? `
+                            <div class="preparation-image-box">
+                                <strong>📸 Hazırlık Fotoğrafı:</strong><br>
+                                <img src="${item.preparation_image}" 
+                                     onclick="showImageModal('${item.preparation_image}')"
+                                     style="margin-top: 10px;">
+                                ${!item.is_user_approved ? `
+                                    <div class="mt-2">
+                                        <button class="btn btn-success btn-sm" 
+                                                onclick="approveItem(${item.id})">
+                                            ✅ Fotoğrafı Onayla ve Yola Çıkar
+                                        </button>
+                                    </div>
+                                ` : `
+                                    <div class="mt-2">
+                                        <span class="badge bg-success">✅ Onaylandı</span>
+                                    </div>
+                                `}
+                            </div>
+                        ` : `
+                            <div class="text-muted small mt-2">
+                                ⏳ Hazırlık fotoğrafı henüz yüklenmedi
+                            </div>
+                        `}
                     </div>
                 </div>
             `;
@@ -129,11 +280,6 @@ function trackOrder() {
             <div class="fw-bold fs-5 text-end mt-3">
                 Toplam: ${data.order.total} TL
             </div>
-
-            <div class="delivery-info">
-                🚚 Siparişiniz, sipariş tarihinden itibaren
-                <strong>3–7 iş günü</strong> içerisinde teslim edilecektir.
-            </div>
         `;
 
         document.getElementById("resultArea").innerHTML = html;
@@ -141,6 +287,38 @@ function trackOrder() {
     .catch(() => {
         document.getElementById("resultArea").innerHTML =
             `<div class="alert alert-danger mt-3">Sunucu hatası oluştu</div>`;
+    });
+}
+
+function showImageModal(imageUrl) {
+    document.getElementById('modalImage').src = imageUrl;
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+
+function approveItem(itemId) {
+    if (!confirm('Bu ürünün hazırlık fotoğrafını onaylayıp yola çıkmasını istiyor musunuz?')) {
+        return;
+    }
+
+    fetch(`/api/order-item/${itemId}/approve/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            trackOrder(); // Sayfayı yenile
+        } else {
+            alert('Hata: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu');
     });
 }
 

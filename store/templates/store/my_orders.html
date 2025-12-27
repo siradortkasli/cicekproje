@@ -1,0 +1,107 @@
+{% extends "store/base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2 class="mb-4">📦 Siparişlerim</h2>
+
+    {% if orders %}
+    <div class="row">
+        {% for order in orders %}
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">Sipariş #{{ order.id }}</h5>
+                        <small class="text-muted">{{ order.created_at|date:"d.m.Y H:i" }}</small>
+                    </div>
+                    <div>
+                        <span class="badge 
+                            {% if order.status == 'PREPARING' %}bg-warning
+                            {% elif order.status == 'WAITING_APPROVAL' %}bg-info
+                            {% elif order.status == 'SHIPPED' %}bg-primary
+                            {% elif order.status == 'DELIVERED' %}bg-success
+                            {% elif order.status == 'CANCELLED' %}bg-danger
+                            {% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                        {% if order.is_cancelled %}
+                        <span class="badge bg-danger">İptal Edildi</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6 class="fw-bold mb-3">Ürünler:</h6>
+                            {% for item in order.items.all %}
+                            <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                                <img src="{{ item.image_url|default:item.product.image_url }}" 
+                                     style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;">
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold">{{ item.product.name }}</div>
+                                    <div class="text-muted small">
+                                        {{ item.quantity }} adet × {{ item.price }} TL
+                                    </div>
+                                    {% if item.product.company %}
+                                    <div class="text-muted small">🏢 {{ item.product.company.name }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="fw-bold">
+                                    {{ item.quantity }} × {{ item.price }} TL = 
+                                    {% widthratio item.quantity 1 item.price %} TL
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold">Teslimat Bilgileri</h6>
+                                    {% if order.customer_name %}
+                                    <p class="mb-1"><strong>Alıcı:</strong> {{ order.customer_name }}</p>
+                                    {% endif %}
+                                    {% if order.phone_number %}
+                                    <p class="mb-1"><strong>Telefon:</strong> {{ order.phone_number }}</p>
+                                    {% endif %}
+                                    {% if order.city %}
+                                    <p class="mb-1"><strong>Şehir:</strong> {{ order.city }}</p>
+                                    {% endif %}
+                                    {% if order.address %}
+                                    <p class="mb-1"><strong>Adres:</strong> {{ order.address|truncatewords:10 }}</p>
+                                    {% endif %}
+                                    {% if order.is_cancelled and order.cancellation_reason %}
+                                    <div class="alert alert-danger mt-2 mb-0">
+                                        <strong>İptal Nedeni:</strong><br>
+                                        {{ order.cancellation_reason }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <div>
+                            <strong>Toplam Tutar:</strong>
+                            <span class="fs-4 text-success fw-bold ms-2">{{ order.total_price|floatformat:2 }} TL</span>
+                        </div>
+                        <div>
+                            <a href="/siparis-takibi/" class="btn btn-outline-primary btn-sm">
+                                📦 Sipariş Takibi
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        <h5>Henüz siparişiniz bulunmamaktadır.</h5>
+        <p class="mb-0">İlk siparişinizi vermek için <a href="/">ürünleri</a> inceleyebilirsiniz.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
