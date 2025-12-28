@@ -149,4 +149,22 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product} x {self.quantity}"
+
+
+class MessageCard(models.Model):
+    """Mesaj kartı modeli: Sipariş başarı sayfasında kullanıcı tarafından eklenen mesaj kartları"""
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="message_cards"
+    )
+    sender_name = models.CharField(max_length=150, verbose_name="Gönderici İsim Soyisim")
+    recipient_name = models.CharField(max_length=150, verbose_name="Alıcı İsim Soyisim")
+    recipient_phone = models.CharField(max_length=20, verbose_name="Alıcı Telefon Numarası")
+    message_title = models.CharField(max_length=200, verbose_name="Mesaj Başlığı")
+    message_content = models.TextField(verbose_name="Mesaj İçeriği")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Mesaj Kartı - Sipariş #{self.order.id} - {self.sender_name}"
     

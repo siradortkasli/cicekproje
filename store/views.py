@@ -1,5 +1,5 @@
 from django.shortcuts import render , get_object_or_404, redirect
-from .models import Product,Category, ProductImage, Review, Order, OrderItem, CartItem, City, Company
+from .models import Product,Category, ProductImage, Review, Order, OrderItem, CartItem, City, Company, MessageCard
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Avg
@@ -314,7 +314,7 @@ def company_orders(request):
     # Firma ürünlerine ait sipariş kalemleri
     order_items = OrderItem.objects.filter(
         product__company=company
-    ).select_related('order', 'product').order_by('-order__created_at')
+    ).select_related('order', 'product').prefetch_related('order__message_cards').order_by('-order__created_at')
     
     return render(request, "company/orders.html", {
         "company": company,
@@ -863,6 +863,60 @@ def order_success(request, order_id):
         "items": items
     })
 
+
+# ============================================
+# MESAJ KARTI EKLEME
+# Sipariş başarı sayfasında kullanıcı mesaj kartı ekler
+# ============================================
+@csrf_exempt
+@require_POST
+def add_message_card(request, order_id):
+    """Sipariş için mesaj kartı ekleme endpoint'i"""
+    try:
+        order = Order.objects.get(id=order_id)
+        
+        # JSON verisini al
+        data = json.loads(request.body)
+        
+        sender_name = data.get("sender_name", "").strip()
+        recipient_name = data.get("recipient_name", "").strip()
+        recipient_phone = data.get("recipient_phone", "").strip()
+        message_title = data.get("message_title", "").strip()
+        message_content = data.get("message_content", "").strip()
+        
+        # Validasyon
+        if not all([sender_name, recipient_name, recipient_phone, message_title, message_content]):
+            return JsonResponse({
+                "success": False,
+                "error": "Tüm alanlar zorunludur."
+            }, status=400)
+        
+        # Mesaj kartı oluştur
+        message_card = MessageCard.objects.create(
+            order=order,
+            sender_name=sender_name,
+            recipient_name=recipient_name,
+            recipient_phone=recipient_phone,
+            message_title=message_title,
+            message_content=message_content
+        )
+        
+        return JsonResponse({
+            "success": True,
+            "message": "Mesaj kartı başarıyla eklendi!"
+        })
+        
+    except Order.DoesNotExist:
+        return JsonResponse({
+            "success": False,
+            "error": "Sipariş bulunamadı."
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "error": f"Bir hata oluştu: {str(e)}"
+        }, status=500)
+
 @login_required
 def order_tracking(request):
     return render(request, "store/order_tracking.html")
@@ -873,7 +927,7 @@ def my_orders(request):
     # Kullanıcının siparişlerini en yeni → en eski sırala
     orders = Order.objects.filter(
         user=request.user
-    ).prefetch_related('items__product').order_by('-created_at')
+    ).prefetch_related('items__product', 'message_cards').order_by('-created_at')
     
     return render(request, "store/my_orders.html", {
         "orders": orders

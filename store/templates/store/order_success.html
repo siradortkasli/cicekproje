@@ -101,16 +101,153 @@
         </div>
         {% endfor %}
 
-        <!-- Yönlendirme butonları: Sipariş takibi ve alışverişe devam -->
+        <!-- Yönlendirme butonları: Sipariş takibi, mesaj kartı ekle ve alışverişe devam -->
         <div class="d-flex justify-content-center gap-3 mt-4">
             <a href="/siparis-takibi/" class="btn btn-outline-success btn-lg px-4">
                 📦 Sipariş Takibi
             </a>
+            <button type="button" class="btn btn-outline-primary btn-lg px-4" data-bs-toggle="modal" data-bs-target="#messageCardModal">
+                💌 Mesaj Kartı Ekle
+            </button>
             <a href="/" class="btn btn-success btn-lg px-4">
                 🛒 Alışverişe Devam Et
             </a>
         </div>
     </div>
 </div>
+
+<!-- Mesaj Kartı Modal: Kullanıcı mesaj kartı bilgilerini girer -->
+<div class="modal fade" id="messageCardModal" tabindex="-1" aria-labelledby="messageCardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="messageCardModalLabel">💌 Mesaj Kartı Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="messageCardForm">
+                    <!-- Gönderici isim soyisim -->
+                    <div class="mb-3">
+                        <label for="sender_name" class="form-label">Gönderici İsim Soyisim <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="sender_name" name="sender_name" required>
+                    </div>
+                    
+                    <!-- Alıcı isim soyisim -->
+                    <div class="mb-3">
+                        <label for="recipient_name" class="form-label">Alıcı İsim Soyisim <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="recipient_name" name="recipient_name" required>
+                    </div>
+                    
+                    <!-- Alıcı telefon numarası -->
+                    <div class="mb-3">
+                        <label for="recipient_phone" class="form-label">Alıcı Telefon Numarası <span class="text-danger">*</span></label>
+                        <input type="tel" class="form-control" id="recipient_phone" name="recipient_phone" required>
+                    </div>
+                    
+                    <!-- Mesaj başlığı -->
+                    <div class="mb-3">
+                        <label for="message_title" class="form-label">Mesaj Başlığı <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="message_title" name="message_title" required>
+                    </div>
+                    
+                    <!-- Mesaj içeriği -->
+                    <div class="mb-3">
+                        <label for="message_content" class="form-label">Mesaj İçeriği <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="message_content" name="message_content" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" id="submitMessageCard">Mesaj Kartını Bitir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// CSRF token almak için yardımcı fonksiyon
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Mesaj kartı gönderme işlemi
+document.addEventListener('DOMContentLoaded', function() {
+    const submitBtn = document.getElementById('submitMessageCard');
+    const messageCardForm = document.getElementById('messageCardForm');
+    const modal = new bootstrap.Modal(document.getElementById('messageCardModal'));
+    
+    submitBtn.addEventListener('click', function() {
+        // Form verilerini al
+        const formData = {
+            sender_name: document.getElementById('sender_name').value.trim(),
+            recipient_name: document.getElementById('recipient_name').value.trim(),
+            recipient_phone: document.getElementById('recipient_phone').value.trim(),
+            message_title: document.getElementById('message_title').value.trim(),
+            message_content: document.getElementById('message_content').value.trim()
+        };
+        
+        // Validasyon
+        if (!formData.sender_name || !formData.recipient_name || !formData.recipient_phone || 
+            !formData.message_title || !formData.message_content) {
+            alert('Lütfen tüm alanları doldurun.');
+            return;
+        }
+        
+        // Butonu devre dışı bırak
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Gönderiliyor...';
+        
+        // API'ye gönder
+        fetch(`/api/order/{{ order.id }}/message-card/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                modal.hide();
+                // Formu temizle
+                messageCardForm.reset();
+                // Anasayfaya yönlendir
+                window.location.href = '/';
+            } else {
+                alert('Hata: ' + data.error);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Mesaj Kartını Bitir';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Mesaj Kartını Bitir';
+        });
+    });
+    
+    // Modal kapandığında formu temizle
+    document.getElementById('messageCardModal').addEventListener('hidden.bs.modal', function() {
+        messageCardForm.reset();
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Mesaj Kartını Bitir';
+    });
+});
+</script>
 
 {% endblock %}

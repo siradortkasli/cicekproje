@@ -26,6 +26,7 @@
                     <th>Sipariş Durumu</th>
                     <th>Hazırlık Fotoğrafı</th>
                     <th>Kullanıcı Onayı</th>
+                    <th>Mesaj Kartı</th>
                     <th>İşlemler</th>
                 </tr>
             </thead>
@@ -119,6 +120,21 @@
                         {% endif %}
                     </td>
                     
+                    <!-- Mesaj kartı: Sipariş için eklenen mesaj kartı bilgileri -->
+                    <td>
+                        {% if item.order.message_cards.exists %}
+                            <!-- Mesaj kartı var: Buton ile modal açılır -->
+                            <button type="button" class="btn btn-info btn-sm" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#messageCardModal{{ item.order.id }}">
+                                💌 Mesaj Kartı
+                            </button>
+                        {% else %}
+                            <!-- Mesaj kartı yok: Bilgilendirme -->
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    
                     <!-- İşlemler: Sipariş durumu değiştirme, düzenleme, iptal etme ve teslim etme butonları -->
                     <td>
                         <div class="d-flex gap-2 flex-wrap">
@@ -180,6 +196,71 @@
     </div>
     {% endif %}
 </div>
+
+<!-- ============================================
+     MESAJ KARTI MODAL PENCERELERİ
+     Her sipariş için mesaj kartı bilgilerini gösteren modal pencereler
+     ============================================ -->
+{% for item in order_items %}
+    {% if item.order.message_cards.exists %}
+        {% for message_card in item.order.message_cards.all %}
+        <div class="modal fade" id="messageCardModal{{ item.order.id }}" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">💌 Mesaj Kartı - Sipariş #{{ item.order.id }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Gönderici bilgileri -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Gönderici İsim Soyisim:</label>
+                            <p class="form-control-plaintext">{{ message_card.sender_name }}</p>
+                        </div>
+                        
+                        <!-- Alıcı bilgileri -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Alıcı İsim Soyisim:</label>
+                            <p class="form-control-plaintext">{{ message_card.recipient_name }}</p>
+                        </div>
+                        
+                        <!-- Alıcı telefon numarası -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Alıcı Telefon Numarası:</label>
+                            <p class="form-control-plaintext">{{ message_card.recipient_phone }}</p>
+                        </div>
+                        
+                        <!-- Mesaj başlığı -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mesaj Başlığı:</label>
+                            <p class="form-control-plaintext">{{ message_card.message_title }}</p>
+                        </div>
+                        
+                        <!-- Mesaj içeriği -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mesaj İçeriği:</label>
+                            <div class="border rounded p-3 bg-light">
+                                <p class="mb-0">{{ message_card.message_content|linebreaks }}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Oluşturulma tarihi -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Oluşturulma Tarihi:</label>
+                            <p class="form-control-plaintext text-muted">
+                                {{ message_card.created_at|date:"d.m.Y H:i" }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endfor %}
 
 <!-- ============================================
      HAZIRLIK FOTOĞRAFI MODAL PENCERESİ

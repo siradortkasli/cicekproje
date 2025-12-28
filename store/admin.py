@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category, ProductImage, Review, Cart, CartItem, Order, City, Company, OrderItem
+from .models import Product, Category, ProductImage, Review, Cart, CartItem, Order, City, Company, OrderItem, MessageCard
 from .api_service import save_products_to_db
 
 #ürün görselleri
@@ -78,6 +78,17 @@ class OrderAdmin(admin.ModelAdmin):
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ("id", "username", "rating", "product", "created_at")
+
+# ============================================
+# MESAJ KARTI ADMIN PANELİ
+# Sipariş mesaj kartlarını görüntüleme
+# ============================================
+@admin.register(MessageCard)
+class MessageCardAdmin(admin.ModelAdmin):
+    list_display = ("id", "order", "sender_name", "recipient_name", "message_title", "created_at")
+    list_filter = ("created_at",)
+    search_fields = ("sender_name", "recipient_name", "message_title", "order__id")
+    readonly_fields = ("created_at",)
     
 admin.site.register(Category)
 admin.site.register(City)

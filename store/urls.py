@@ -31,6 +31,7 @@ urlpatterns = [
     path("checkout/", views.checkout_page, name="checkout_page"),
     # ✅ Sipariş sonucu
     path("order/success/<int:order_id>/", views.order_success, name="order_success"),
+    path("api/order/<int:order_id>/message-card/", views.add_message_card, name="add_message_card"),
     # 🚚 Sipariş takibi
     path("api/order/track/", views.order_track_api),
     path("siparis-takibi/", views.order_tracking, name="order_tracking"),
