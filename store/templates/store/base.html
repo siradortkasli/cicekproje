@@ -87,10 +87,6 @@
         {% endif %}
 
         <div class="d-flex align-items-center gap-2 {% if request.path != '/' %}ms-auto{% endif %}">
-            <a href="/firma/login/" class="btn btn-outline-dark btn-sm">
-                Firma Girişi
-            </a>
-            
             <a class="btn btn-light text-secondary btn-sm" href="{% url 'order_tracking' %}">
                 <i class="bi bi-truck me-1"></i> Sipariş Takibi
             </a>
@@ -113,6 +109,10 @@
                         <li><a class="dropdown-item" href="/accounts/login/">Giriş Yap</a></li>
                         <li><a class="dropdown-item" href="/accounts/register/">Kayıt Ol</a></li>
                     {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/firma/login/">
+                        <i class="bi bi-building me-1"></i> Firma Girişi
+                    </a></li>
                 </ul>
             </div>
             

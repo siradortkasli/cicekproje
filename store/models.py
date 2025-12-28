@@ -17,6 +17,7 @@ class Category(models.Model):
         return self.name
 
 class Company(models.Model):
+    """Firma modeli: Her firma bir kullanıcıya bağlıdır"""
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -24,19 +25,19 @@ class Company(models.Model):
     )
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True)
-    is_approved = models.BooleanField(default=False)  # admin onayı
+    is_approved = models.BooleanField(default=False)  # Admin onayı: Firma onaylanmadan ürün ekleyemez
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
     
 class Product(models.Model):
+    """Ürün modeli: Firma tarafından eklenen ürünler"""
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
-        related_name="products",
-        null=True,      # 🔥 GEÇİCİ
-        blank=True     # tüm ürünlerde company dolu olunca null ve blank kaldır tekrar migratıon yap!!
+        related_name="products"
+        # null=True ve blank=True kaldırıldı - Tüm ürünler bir firmaya bağlı olmalı
     )
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
 
@@ -49,7 +50,7 @@ class Product(models.Model):
     has_video = models.BooleanField(default=False)
     is_premium = models.BooleanField(default=False)
 
-    is_approved = models.BooleanField(default=False)  # 🔥 ADMIN ONAYI
+    is_approved = models.BooleanField(default=False)  # Admin onayı: Onaylanmadan sitede görünmez
     is_active = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -87,10 +88,12 @@ class CartItem(models.Model):
     delivery_date = models.CharField(max_length=20)
 
 class Order(models.Model):
-
+    """Sipariş modeli: Kullanıcı siparişleri ve durum takibi"""
+    
+    # Sipariş durum seçenekleri
     STATUS_CHOICES = [
         ("PREPARING", "Hazırlanıyor"),
-        ("WAITING_APPROVAL", "Kullanıcı Onayı Bekleniyor"),
+        ("WAITING_APPROVAL", "Kullanıcı Onayı Bekleniyor"),  # Hazırlık fotoğrafı yüklendi, kullanıcı onayı bekleniyor
         ("SHIPPED", "Yola Çıktı"),
         ("DELIVERED", "Teslim Edildi"),
         ("CANCELLED", "İptal Edildi"),
@@ -129,16 +132,19 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
+    """Sipariş kalemi: Her siparişteki ürün bilgileri"""
     order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image_url = models.URLField(blank=True, null=True)
+    # Firma tarafından yüklenen hazırlık fotoğrafı
     preparation_image = models.ImageField(
        upload_to="order_preparations/",
        null=True,
        blank=True
     )
+    # Kullanıcı fotoğrafı onayladı mı? (True ise sipariş "Yola Çıktı" durumuna geçer)
     is_user_approved = models.BooleanField(default=False)
 
     def __str__(self):

@@ -1,6 +1,11 @@
 {% extends "store/base.html" %}
 {% block content %}
 
+<!-- ============================================
+     ÖDEME SAYFASI
+     Kullanıcının adres ve ödeme bilgilerini girip siparişi tamamladığı sayfa
+     ============================================ -->
+
 <style>
 body {
     background: linear-gradient(135deg, #f3f7f4, #eef5f0);
@@ -102,25 +107,24 @@ body {
 <div class="d-flex align-items-center mb-3 p-2 bg-white rounded shadow-sm product-row">
 
 <div class="container mt-4">
-
-
     <h2 class="fw-bold mb-4">💳 Ödeme Sayfası</h2>
 
     <div class="row g-4">
-
-        <!-- SOL -->
+        <!-- Sol taraf: Adres ve ödeme bilgileri formu -->
         <div class="col-md-7">
             <div class="payment-box">
-                <!-- ADRES BİLGİLERİ -->
+                <!-- Adres bilgileri bölümü: Teslimat adresi bilgileri -->
                 <div class="mb-4 p-3 rounded bg-light border">
                 <div class="section-divider"></div>
                 <h4 class="payment-title">📍 Adres Bilgileri</h4>
 
                 <div class="row">
+                    <!-- Alıcı ad soyad: Zorunlu alan -->
                     <div class="col-6 mb-3">
                         <label>Alıcı Ad Soyad</label>
                         <input id="fullName" type="text" class="form-control" placeholder="Ad Soyad">
                     </div>
+                    <!-- Telefon numarası: Zorunlu alan -->
                     <div class="col-6 mb-3">
                         <label>Telefon Numarası</label>
                         <input id="phone" type="text" class="form-control" placeholder="+90 5xx xxx xx xx">
@@ -128,49 +132,55 @@ body {
                 </div>
 
                 <div class="row">
+                    <!-- Ülke: Varsayılan Türkiye -->
                     <div class="col-6 mb-3">
                         <label>Ülke</label>
                         <input id="country" type="text" class="form-control" placeholder="Türkiye">
                     </div>
+                    <!-- Şehir: Zorunlu alan -->
                     <div class="col-6 mb-3">
                         <label>Şehir</label>
                         <input id="city" type="text" class="form-control" placeholder="İstanbul">
                     </div>
                 </div>
 
+                <!-- Detaylı adres: Mahalle, cadde, sokak, bina no, daire no -->
                 <div class="mb-3">
                     <label>Adres</label>
                     <textarea id="address" class="form-control" rows="3"
                         placeholder="Mahalle, cadde, sokak, bina no, daire no"></textarea>
                 </div>
             </div> 
-                <!-- KART BİLGİLERİ -->
+                <!-- Kart bilgileri bölümü: Ödeme kartı bilgileri (simülasyon) -->
                  <div class="p-3 rounded bg-light border">
                 <h4 class="payment-title">Kart Bilgileri</h4>
 
+                <!-- Kart üzerindeki isim -->
                 <div class="mb-3">
                     <label>Kart Üzerindeki İsim</label>
                     <input id="cardName" type="text" class="form-control" placeholder="Ad Soyad">
                 </div>
 
+                <!-- Kart numarası -->
                 <div class="mb-3">
                     <label>Kart Numarası</label>
                     <input id="cardNumber" type="text" class="form-control" placeholder="1234 5678 9012 3456">
                 </div>
 
                 <div class="row">
+                    <!-- Son kullanma tarihi: AA/YY formatında -->
                     <div class="col-6 mb-3">
                         <label>Son Kullanma Tarihi</label>
                         <input id="cardDate" type="text" class="form-control" placeholder="AA/YY">
                     </div>
+                    <!-- CVV: Güvenlik kodu -->
                     <div class="col-6 mb-3">
                         <label>CVV</label>
                         <input id="cardCvv" type="password" class="form-control" placeholder="***">
                     </div>
                 </div>
 
-
-
+                <!-- Ödeme butonu: Form validasyonu yapar ve siparişi oluşturur -->
                 <button class="pay-btn mt-4" onclick="payNow()">
                     🔐 Güvenli Ödeme Yap
                 </button>
@@ -178,18 +188,22 @@ body {
             </div>
         </div>
 
-        <!-- SAĞ -->
+        <!-- Sağ taraf: Sipariş özeti (sticky) -->
         <div class="col-md-5">
-            <div class="summary-box>
-
+            <div class="summary-box">
+                <!-- Sepetteki ürünler listesi -->
                 <h5 class="fw-bold mb-3">🛍️ Satın Alınan Ürünler</h5>
 
+                <!-- Her sepet öğesi için ürün bilgisi -->
                 {% for item in cart %}
                 <div class="d-flex align-items-center mb-3 p-2 bg-white rounded shadow-sm">
+                    <!-- Ürün görseli -->
                     <img src="{{ item.image_url }}"
                          style="width:70px;height:70px;object-fit:cover;border-radius:10px;margin-right:12px;">
                     <div class="flex-grow-1">
+                        <!-- Ürün adı -->
                         <div class="fw-bold">{{ item.name }}</div>
+                        <!-- Miktar ve birim fiyat -->
                         <div class="text-muted small">
                             {{ item.quantity }} adet × {{ item.price }} TL
                         </div>
@@ -199,11 +213,13 @@ body {
 
                 <hr>
 
+                <!-- Ara toplam: Ürünlerin toplam fiyatı -->
                 <div class="d-flex justify-content-between">
                     <span>Ara Toplam</span>
                     <strong>{{ total|floatformat:2 }} TL</strong>
                 </div>
 
+                <!-- Teslimat ücreti: Ücretsiz teslimat -->
                 <div class="d-flex justify-content-between">
                     <span>Teslimat</span>
                     <strong class="text-success">Ücretsiz</strong>
@@ -211,18 +227,22 @@ body {
 
                 <hr>
 
+                <!-- Toplam tutar: Final ödeme tutarı -->
                 <div class="d-flex justify-content-between fs-5 fw-bold">
                     <span>Toplam</span>
                     <span>{{ total|floatformat:2 }} TL</span>
                 </div>
-
             </div>
         </div>
-
     </div>
 </div>
 
+<!-- ============================================
+     JAVASCRIPT FONKSİYONLARI
+     Form validasyonu ve sipariş oluşturma
+     ============================================ -->
 <script>
+// CSRF token'ı cookie'den alır: Django güvenliği için gerekli
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== "") {
@@ -236,8 +256,9 @@ function getCookie(name) {
     return cookieValue;
 }
 
+// Ödeme işlemini başlatır: Form validasyonu yapar ve siparişi oluşturur
 function payNow() {
-
+    // Zorunlu form alanları listesi
     const fields = [
         "fullName",
         "phone",
@@ -252,6 +273,7 @@ function payNow() {
 
     let hasError = false;
 
+    // Her alanı kontrol et: Boşsa kırmızı işaretle
     fields.forEach(id => {
         const el = document.getElementById(id);
         el.classList.remove("is-invalid");
@@ -262,12 +284,13 @@ function payNow() {
         }
     });
 
+    // Hata varsa işlemi durdur
     if (hasError) {
         alert("❗ Lütfen kırmızı ile işaretlenen alanları doldurun.");
-        return; // ⛔ backend'e gitmez
+        return;
     }
 
-    /* ✅ HER ŞEY TAMSA */
+    // Form validasyonu başarılı: Sipariş verilerini hazırla
     const orderData = {
         customer_name: document.getElementById("fullName").value,
         phone_number: document.getElementById("phone").value,
@@ -275,6 +298,7 @@ function payNow() {
         city: document.getElementById("city").value
     };
     
+    // API'ye sipariş oluşturma isteği gönder
     fetch("/api/order/checkout/", {
         method: "POST",
         headers: {
@@ -286,8 +310,10 @@ function payNow() {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
+            // Başarılı: Sipariş başarı sayfasına yönlendir
             window.location.href = data.redirect_url;
         } else {
+            // Hata: Hata mesajını göster
             alert(data.error || "Ödeme başarısız");
         }
     })

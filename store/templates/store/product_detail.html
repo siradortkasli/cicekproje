@@ -2,6 +2,11 @@
 {% block content %}
 {% load static %}
 
+<!-- ============================================
+     ÜRÜN DETAY SAYFASI
+     Ürün bilgileri, yorumlar, sepete ekleme ve sipariş verme sayfası
+     API'den dinamik olarak yüklenir
+     ============================================ -->
 
 <style>
 #reviewsArea p { font-size: 15px; }
@@ -198,32 +203,41 @@ select:focus {
 
 </style>
 
+<!-- Ürün detay alanı: JavaScript ile dinamik olarak doldurulur -->
 <div class="container mt-4">
     <div id="productDetailArea"></div>
 </div>
+
+<!-- ============================================
+     JAVASCRIPT FONKSİYONLARI
+     Ürün yükleme, şehir listesi, sepete ekleme, yorum işlemleri
+     ============================================ -->
 <script>
+// Mevcut ürün ID'si: Global değişken, sepete ekleme için kullanılır
 let currentProductId = null;
 
+// Sayfa yüklendiğinde ürün bilgilerini yükle
 document.addEventListener("DOMContentLoaded", function () {
+    // URL'den ürün ID'sini al (örn: /urun/5/ -> 5)
     let productId = window.location.pathname.split("/")[2];
-    loadProduct(productId); // 🔥 önce HTML oluşsun
+    loadProduct(productId);
 });
 
-
+// Şehir listesini API'den yükler ve dropdown'a ekler
 function loadCities() {
     return fetch("/api/cities/")
         .then(res => res.json())
         .then(data => {
-
             const citySelect = document.getElementById("citySelect");
             if (!citySelect) {
                 console.error("citySelect bulunamadı");
                 return;
             }
 
+            // Dropdown'u temizle ve varsayılan seçeneği ekle
             citySelect.innerHTML = "<option value=''>Şehir Seçiniz</option>";
 
-            // ✅ DOĞRU KULLANIM
+            // Her şehri dropdown'a ekle
             data.cities.forEach(city => {
                 citySelect.innerHTML += `
                     <option value="${city}">${city}</option>
@@ -238,159 +252,174 @@ function loadCities() {
 
 
 
+// Ürün bilgilerini API'den yükler ve sayfaya render eder
 function loadProduct(id) {
-window.currentProductId = id; 
-    fetch(`/api/product/${id}/`)
+    // Global değişkene ürün ID'sini kaydet
+    window.currentProductId = id; 
+    
+    // API'den ürün bilgilerini çek
+    fetch('/api/product/' + id + '/')
         .then(res => res.json())
         .then(p => {
-
-
-document.getElementById("productDetailArea").innerHTML = `
+            // Ürün detay HTML'ini oluştur
+            document.getElementById("productDetailArea").innerHTML = `
 <div class="row">
-
-<div class="col-md-6 product-left-box">
-    <img src="${p.image_url}" id="mainImage">
-</div>
-
-<div class="col-md-6">
-
-${p.company_name ? `<small class="text-muted d-block mb-2">🏢 ${p.company_name}</small>` : ''}
-<h3 class="fw-bold">${p.name}</h3>
-<span class="badge-custom mb-2">Aynı Gün Teslim</span>
-
-<p class="price mt-2">${p.price} TL</p>
-<p class="text-muted">KDV Dahil</p>
-
-
-
-<label class="mt-2">Gönderim Şehri:</label>
-<select id="citySelect" class="form-control">
-    <option value="">Şehir Seçiniz</option>
-</select>
-
-<label class="mt-2">Teslim Tarihi:</label>
-<select id="dateSelect" class="form-control" onchange="toggleCalendar()">
-    <option value="today">Bugün</option>
-    <option value="tomorrow">Yarın</option>
-    <option value="calendar">Takvimden Seç</option>
-</select>
-
-<label class="mt-3 fw-bold">Teslimat Saati:</label>
-
-<div class="row g-2 mt-1" id="timeSlots">
-
-    <div class="col-4">
-        <div class="time-box active" onclick="selectTime(this, '08:00-12:00')">
-            <strong>08:00 - 12:00</strong>
-            <div class="text-muted small">Sabah</div>
-        </div>
+    <!-- Sol taraf: Ürün görseli -->
+    <div class="col-md-6 product-left-box">
+        <img src="${p.image_url}" id="mainImage">
     </div>
 
-    <div class="col-4">
-        <div class="time-box" onclick="selectTime(this, '12:00-17:00')">
-            <strong>12:00 - 17:00</strong>
-            <div class="text-muted small">Öğle</div>
+    <!-- Sağ taraf: Ürün bilgileri ve sipariş formu -->
+    <div class="col-md-6">
+        <!-- Firma adı: Varsa gösterilir -->
+        ${p.company_name ? `<small class="text-muted d-block mb-2">🏢 ${p.company_name}</small>` : ''}
+        <!-- Ürün adı -->
+        <h3 class="fw-bold">${p.name}</h3>
+        <!-- Teslimat badge: Aynı gün teslimat vurgusu -->
+        <span class="badge-custom mb-2">Aynı Gün Teslim</span>
+
+        <!-- Ürün fiyatı: Yeşil renkte vurgulanmış -->
+        <p class="price mt-2">${p.price} TL</p>
+        <p class="text-muted">KDV Dahil</p>
+
+        <!-- Gönderim şehri seçimi: Dropdown menü -->
+        <label class="mt-2">Gönderim Şehri:</label>
+        <select id="citySelect" class="form-control">
+            <option value="">Şehir Seçiniz</option>
+        </select>
+
+        <!-- Teslim tarihi seçimi: Bugün, yarın veya takvimden seçim -->
+        <label class="mt-2">Teslim Tarihi:</label>
+        <select id="dateSelect" class="form-control" onchange="toggleCalendar()">
+            <option value="today">Bugün</option>
+            <option value="tomorrow">Yarın</option>
+            <option value="calendar">Takvimden Seç</option>
+        </select>
+
+        <!-- Teslimat saati seçimi: Sabah, öğle, akşam aralıkları -->
+        <label class="mt-3 fw-bold">Teslimat Saati:</label>
+        <div class="row g-2 mt-1" id="timeSlots">
+            <!-- Sabah aralığı: 08:00-12:00 (varsayılan seçili) -->
+            <div class="col-4">
+                <div class="time-box active" onclick="selectTime(this, '08:00-12:00')">
+                    <strong>08:00 - 12:00</strong>
+                    <div class="text-muted small">Sabah</div>
+                </div>
+            </div>
+            <!-- Öğle aralığı: 12:00-17:00 -->
+            <div class="col-4">
+                <div class="time-box" onclick="selectTime(this, '12:00-17:00')">
+                    <strong>12:00 - 17:00</strong>
+                    <div class="text-muted small">Öğle</div>
+                </div>
+            </div>
+            <!-- Akşam aralığı: 17:00-22:00 -->
+            <div class="col-4">
+                <div class="time-box" onclick="selectTime(this, '17:00-22:00')">
+                    <strong>17:00 - 22:00</strong>
+                    <div class="text-muted small">Akşam</div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="col-4">
-        <div class="time-box" onclick="selectTime(this, '17:00-22:00')">
-            <strong>17:00 - 22:00</strong>
-            <div class="text-muted small">Akşam</div>
-        </div>
-    </div>
+        <!-- Seçilen saat aralığı: Hidden input ile saklanır -->
+        <input type="hidden" id="timeSelect" value="08:00-12:00">
 
-</div>
+        <!-- Takvim input'u: "Takvimden Seç" seçildiğinde görünür -->
+        <input type="date" id="calendarInput"
+               class="form-control mt-2"
+               style="display:none;">
 
-<input type="hidden" id="timeSelect" value="08:00-12:00">
+        <!-- Ürün miktarı seçimi: 1-4 arası seçim -->
+        <label class="mt-2">Adet:</label>
+        <select id="qtySelect" class="form-control">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+        </select>
 
-
-
-<input type="date" id="calendarInput"
-       class="form-control mt-2"
-       style="display:none;">
-
-
-<label class="mt-2">Adet:</label>
-<select id="qtySelect" class="form-control">
-    <option value="1">1</option>
-    <option value="2">2</option>
-    <option value="3">3</option>
-    <option value="4">4</option>
-</select>
-
-<button type="button"
-        class="order-button mt-3"
-        data-product-id="${p.id}"
-        onclick="addToCart(this, true)">
-    🚀 Hemen Sipariş Ver
-</button>
-
-<button type="button"
-        id="addToCartBtn"
-        class="cart-button"
-        data-product-id="${p.id}"
-        onclick="addToCart(this, false)">
-    🛒 Sepete Ekle
-</button>
-
-
-
-
-</div>
-</div>
-
-<hr class="mt-4">
-<div class="product-tabs mt-4">
-
-    <div class="tab-buttons">
-        <button class="tab-btn active" data-tab="desc">Ürün Açıklaması</button>
-        <button class="tab-btn" data-tab="reviews">
-            Yorumlar (<span id="reviewCount">0</span>)
+        <!-- Hemen sipariş ver butonu: Sepete ekle ve sepete yönlendir -->
+        <button type="button"
+                class="order-button mt-3"
+                data-product-id="${p.id}"
+                onclick="addToCart(this, true)">
+            🚀 Hemen Sipariş Ver
         </button>
-    </div>
 
-    <!-- AÇIKLAMA -->
-    <div id="tab-desc" class="tab-panel active">
-        <div class="desc-box">
-            <h5 class="fw-bold mb-2">Ürün Hakkında</h5>
+        <!-- Sepete ekle butonu: Sadece sepete ekle, yönlendirme yapma -->
+        <button type="button"
+                id="addToCartBtn"
+                class="cart-button"
+                data-product-id="${p.id}"
+                onclick="addToCart(this, false)">
+            🛒 Sepete Ekle
+        </button>
 
-            <p class="text-muted" style="line-height:1.7;">
-                ${p.description ? p.description : "Bu ürün için açıklama bulunmamaktadır."}
-            </p>
 
-            <ul>
-                <li>🌸 Aynı gün teslimat</li>
-                <li>🎁 Özenli paketleme</li>
-                <li>💳 Güvenli ödeme</li>
-            </ul>
-        </div>
-    </div>
 
-    <!-- YORUMLAR -->
-    <div id="tab-reviews" class="tab-panel">
 
-        <div class="mb-3">
-            <div id="starRating" class="star-rating mb-2">
-                <span data-value="1">★</span>
-                <span data-value="2">★</span>
-                <span data-value="3">★</span>
-                <span data-value="4">★</span>
-                <span data-value="5">★</span>
+</div>
+</div>
+
+        <!-- Sekme bölümü: Ürün açıklaması ve yorumlar -->
+        <hr class="mt-4">
+        <div class="product-tabs mt-4">
+            <!-- Sekme butonları: Açıklama ve yorumlar arasında geçiş -->
+            <div class="tab-buttons">
+                <button class="tab-btn active" data-tab="desc">Ürün Açıklaması</button>
+                <button class="tab-btn" data-tab="reviews">
+                    Yorumlar (<span id="reviewCount">0</span>)
+                </button>
             </div>
 
-            <input id="reviewName" class="form-control mb-2" placeholder="Adınız">
-            <textarea id="reviewText" class="form-control mb-2" placeholder="Yorumunuz"></textarea>
+            <!-- Ürün açıklaması sekmesi: Ürün detay bilgileri -->
+            <div id="tab-desc" class="tab-panel active">
+                <div class="desc-box">
+                    <h5 class="fw-bold mb-2">Ürün Hakkında</h5>
 
-            <button class="btn btn-success" onclick="sendReview(${p.id})">
-                Yorumu Gönder
-            </button>
+                    <!-- Ürün açıklaması: Varsa gösterilir, yoksa varsayılan mesaj -->
+                    <p class="text-muted" style="line-height:1.7;">
+                        ${p.description ? p.description : "Bu ürün için açıklama bulunmamaktadır."}
+                    </p>
+
+                    <!-- Ürün özellikleri: Standart özellikler listesi -->
+                    <ul>
+                        <li>🌸 Aynı gün teslimat</li>
+                        <li>🎁 Özenli paketleme</li>
+                        <li>💳 Güvenli ödeme</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Yorumlar sekmesi: Yorum yazma ve görüntüleme -->
+            <div id="tab-reviews" class="tab-panel">
+                <!-- Yorum yazma formu: Yıldız puanı, isim ve yorum metni -->
+                <div class="mb-3">
+                    <!-- Yıldız puanlama: 1-5 arası seçim -->
+                    <div id="starRating" class="star-rating mb-2">
+                        <span data-value="1">★</span>
+                        <span data-value="2">★</span>
+                        <span data-value="3">★</span>
+                        <span data-value="4">★</span>
+                        <span data-value="5">★</span>
+                    </div>
+
+                    <!-- Yorumcu adı: Opsiyonel -->
+                    <input id="reviewName" class="form-control mb-2" placeholder="Adınız">
+                    <!-- Yorum metni -->
+                    <textarea id="reviewText" class="form-control mb-2" placeholder="Yorumunuz"></textarea>
+
+                    <!-- Yorum gönderme butonu -->
+                    <button class="btn btn-success" onclick="sendReview(${p.id})">
+                        Yorumu Gönder
+                    </button>
+                </div>
+
+                <!-- Yorumlar listesi: API'den yüklenen yorumlar buraya render edilir -->
+                <div id="reviewsArea">Yükleniyor...</div>
+            </div>
         </div>
-
-        <div id="reviewsArea">Yükleniyor...</div>
-    </div>
-
-</div>
 
 `;
 
@@ -400,80 +429,53 @@ loadReviews(id);
 });
 }
 
-function orderProduct() {
-
-    if (!window.currentProductId) {
-        alert("Ürün ID bulunamadı!");
-        return;
-    }
-
-    let item = {
-    product_id: window.currentProductId,
-    quantity: document.getElementById("qtySelect").value,
-    delivery_date: document.getElementById("dateSelect").value,
-    delivery_time: document.getElementById("timeSelect").value,
-    city: document.getElementById("citySelect").value
-};
-
-
-    fetch("/api/cart/add/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(item)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert("✅ Ürün sepete eklendi");
-        } else {
-            alert(data.error || "Hata oluştu");
-        }
-    });
-}
-
+// Ürün yorumlarını API'den yükler ve sayfaya render eder
 function loadReviews(id) {
-    fetch(`/api/product/${id}/reviews/`)
+    fetch('/api/product/' + id + '/reviews/')
         .then(res => res.json())
         .then(data => {
+            // Yorum sayısını güncelle
             document.getElementById("reviewCount").innerText = data.length;
             let html = "";
 
+            // Yorum yoksa bilgilendirme mesajı
             if (data.length === 0) {
                 html = "<p class='text-muted'>Henüz yorum yok.</p>";
             } else {
+                // Her yorum için kart oluştur
                 data.forEach(r => {
                     html += `
                         <div class="review-card mb-3">
                             <div class="review-header">
                                 ${renderStars(r.rating)}
                             </div>
-
+                            <!-- Yorumcu adı -->
                             <strong class="d-block mt-1">${r.username}</strong>
-
+                            <!-- Yorum tarihi -->
                             <div class="review-meta mb-2">
                                 ${new Date(r.created_at).toLocaleDateString("tr-TR")}
                             </div>
-
+                            <!-- Yorum metni -->
                             <p>${r.comment}</p>
                         </div>
                     `;
                 });
             }
 
+            // Oluşturulan HTML'i sayfaya ekle
             document.getElementById("reviewsArea").innerHTML = html;
         });
 }
 
-
+// Yeni yorum gönderir: API'ye POST isteği yapar
 function sendReview(id) {
+    // Yıldız puanı seçilmediyse uyarı ver
     if (selectedRating === 0) {
         alert("Lütfen yıldız seçiniz");
         return;
     }
 
-    fetch(`/api/product/${id}/reviews/create/`, {
+    fetch('/api/product/' + id + '/reviews/create/', {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
@@ -484,16 +486,21 @@ function sendReview(id) {
     })
     .then(res => res.json())
     .then(() => {
+        // Formu temizle
         document.getElementById("reviewText").value = "";
         selectedRating = 0;
 
+        // Yıldızları sıfırla
         document.querySelectorAll("#starRating span").forEach(s => {
             s.classList.remove("active");
         });
 
+        // Yorumları yeniden yükle
         loadReviews(id);
     });
 }
+
+// Yıldız puanını görsel olarak render eder: 1-5 arası yıldız gösterir
 function renderStars(rating) {
     let stars = "";
     for (let i = 1; i <= 5; i++) {
@@ -502,28 +509,30 @@ function renderStars(rating) {
     return stars;
 }
 
-
+// Takvim input'unu göster/gizle: "Takvimden Seç" seçildiğinde takvimi gösterir
 function toggleCalendar() {
     const select = document.getElementById("dateSelect").value;
     document.getElementById("calendarInput").style.display =
         (select === "calendar") ? "block" : "none";
 }
 
+// Ürünü sepete ekler: Şehir, tarih, saat ve miktar bilgileriyle
+// redirect: true ise sepete yönlendirir, false ise sadece ekler
 function addToCart(button, redirect) {
-
     const productId = button.dataset.productId;
     if (!productId) {
         alert("Ürün ID bulunamadı");
         return;
     }
 
+    // Şehir seçimi zorunlu
     const city = document.getElementById("citySelect")?.value;
     if (!city) {
         alert("Lütfen şehir seçiniz");
         return;
     }
 
-
+    // Teslim tarihi: Takvimden seçildiyse takvim değerini, değilse dropdown değerini al
     const dateSelectEl = document.getElementById("dateSelect");
     const calendarInputEl = document.getElementById("calendarInput");
 
@@ -532,6 +541,7 @@ function addToCart(button, redirect) {
         ? calendarInputEl.value
         : dateSelectEl.value;
 
+    // Sepete eklenecek ürün bilgileri
     let item = {
         product_id: productId,
         quantity: document.getElementById("qtySelect").value,
@@ -539,46 +549,53 @@ function addToCart(button, redirect) {
         delivery_date: deliveryDate,
         time_range: document.getElementById("timeSelect").value
     };
+    
+    // API'ye sepete ekleme isteği gönder
     fetch("/api/cart/add/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(item)
     })
- .then(res => res.text())
-.then(text => {
-    let data = {};
-    try {
-        data = text ? JSON.parse(text) : {};
-    } catch (e) {
-        console.warn("JSON parse edilemedi:", text);
-    }
+    .then(res => res.text())
+    .then(text => {
+        let data = {};
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch (e) {
+            console.warn("JSON parse edilemedi:", text);
+        }
 
-    if (!data.success) {
-        alert(data.error || "Hata oluştu");
-        return;
-    }
+        if (!data.success) {
+            alert(data.error || "Hata oluştu");
+            return;
+        }
 
-    if (redirect) {
-        window.location.href = "/sepet/";
-    } else {
-        updateCartCount(1);
-        alert("✅ Ürün sepete eklendi");
-    }
-})
-
+        if (redirect) {
+            // Sepete yönlendir
+            window.location.href = "/sepet/";
+        } else {
+            // Sadece sepete ekle, sayfada kal
+            updateCartCount(1);
+            alert("✅ Ürün sepete eklendi");
+        }
+    })
     .catch(err => {
         console.error("FETCH / JS ERROR:", err);
         alert("Tarayıcı JS hatası (console'a bak)");
     });
 }
 
+// Teslimat saatini seçer: Tıklanan saat kutusunu aktif yapar
 function selectTime(el, value) {
     document.querySelectorAll(".time-box").forEach(b => b.classList.remove("active"));
     el.classList.add("active");
     document.getElementById("timeSelect").value = value;
 }
+
+// Seçilen yıldız puanı: Global değişken
 let selectedRating = 0;
 
+// Yıldız puanlama sistemini başlatır: Her yıldıza tıklama event'i ekler
 function initStarRating() {
     const stars = document.querySelectorAll("#starRating span");
 
@@ -586,8 +603,10 @@ function initStarRating() {
         star.onclick = function () {
             selectedRating = Number(this.dataset.value);
 
+            // Tüm yıldızları temizle
             stars.forEach(s => s.classList.remove("active"));
 
+            // Seçilen puan ve altındaki yıldızları aktif yap
             stars.forEach(s => {
                 if (Number(s.dataset.value) <= selectedRating) {
                     s.classList.add("active");
@@ -596,6 +615,8 @@ function initStarRating() {
         };
     });
 }
+
+// Sepet sayacını günceller: Header'daki sepet ikonundaki sayıyı artırır/azaltır
 function updateCartCount(increment = 1) {
     const cartCountEl = document.getElementById("cart-count");
     if (!cartCountEl) return;
@@ -604,12 +625,15 @@ function updateCartCount(increment = 1) {
     cartCountEl.innerText = current + increment;
 }
 
+// Sekme değiştirme: Ürün açıklaması ve yorumlar arasında geçiş
 document.addEventListener("click", function (e) {
     if (!e.target.classList.contains("tab-btn")) return;
 
+    // Tüm sekmeleri ve panelleri pasif yap
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
     document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
 
+    // Tıklanan sekmeyi ve panelini aktif yap
     e.target.classList.add("active");
     document.getElementById("tab-" + e.target.dataset.tab).classList.add("active");
 });

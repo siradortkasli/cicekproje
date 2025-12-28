@@ -1,7 +1,13 @@
 {% extends "store/base.html" %}
 {% block content %}
 
+<!-- ============================================
+     SİPARİŞ BAŞARI SAYFASI
+     Ödeme tamamlandıktan sonra gösterilen onay sayfası
+     ============================================ -->
+
 <style>
+/* Başarı kutusu: Merkezi konumlandırılmış, gölgeli kutu */
 .success-box {
     max-width: 900px;
     margin: auto;
@@ -11,16 +17,19 @@
     box-shadow: 0 10px 30px rgba(0,0,0,.08);
 }
 
+/* Başarı ikonu: Büyük onay işareti */
 .check-icon {
     font-size: 72px;
 }
 
+/* Sipariş bilgileri kutusu: Gri arka planlı bilgi kutusu */
 .order-info {
     background: #f8f9fa;
     border-radius: 14px;
     padding: 20px;
 }
 
+/* Ürün satırı: Her ürün için yatay düzen */
 .product-row {
     display: flex;
     align-items: center;
@@ -33,6 +42,7 @@
     border-bottom: none;
 }
 
+/* Ürün görseli: Küçük kare görsel */
 .product-row img {
     width: 70px;
     height: 70px;
@@ -43,10 +53,8 @@
 </style>
 
 <div class="container mt-5">
-
     <div class="success-box">
-
-        <!-- BAŞLIK -->
+        <!-- Başarı mesajı: Siparişin alındığını bildiren başlık -->
         <div class="text-center mb-4">
             <div class="check-icon text-success">✅</div>
             <h2 class="fw-bold mt-2">Siparişiniz Alındı</h2>
@@ -55,7 +63,7 @@
             </p>
         </div>
 
-        <!-- SİPARİŞ BİLGİLERİ -->
+        <!-- Sipariş özet bilgileri: Sipariş numarası ve toplam tutar -->
         <div class="order-info mb-4">
             <div class="d-flex justify-content-between">
                 <span><strong>Sipariş No:</strong></span>
@@ -70,25 +78,30 @@
             </div>
         </div>
 
-        <!-- ÜRÜNLER -->
+        <!-- Satın alınan ürünler listesi -->
         <h5 class="fw-bold mb-3">🛍️ Satın Alınan Ürünler</h5>
 
+        <!-- Her sipariş kalemi için ürün bilgisi -->
         {% for item in items %}
         <div class="product-row">
+            <!-- Ürün görseli: Varsayılan placeholder kullanılır -->
             <img src="{{ item.image_url|default:'https://via.placeholder.com/120' }}">
             <div class="flex-grow-1">
+                <!-- Ürün adı -->
                 <div class="fw-bold">{{ item.product.name }}</div>
+                <!-- Miktar ve birim fiyat -->
                 <div class="text-muted small">
                     {{ item.quantity }} adet × {{ item.price }} TL
                 </div>
             </div>
+            <!-- Ürün toplam fiyatı -->
             <div class="fw-bold">
                 {{ item.quantity|floatformat:0 }} × {{ item.price }} TL
             </div>
         </div>
         {% endfor %}
 
-        <!-- BUTONLAR -->
+        <!-- Yönlendirme butonları: Sipariş takibi ve alışverişe devam -->
         <div class="d-flex justify-content-center gap-3 mt-4">
             <a href="/siparis-takibi/" class="btn btn-outline-success btn-lg px-4">
                 📦 Sipariş Takibi
@@ -97,9 +110,7 @@
                 🛒 Alışverişe Devam Et
             </a>
         </div>
-
     </div>
-
 </div>
 
 {% endblock %}

@@ -3,21 +3,33 @@
 
 {% block content %}
 
+<!-- ============================================
+     ÜRÜN LİSTELEME SAYFASI (API İLE)
+     Ana sayfada ürünleri dinamik olarak yükleme ve gösterme
+     ============================================ -->
+
 <h2 class="mb-4 fw-bold">Ürünleri İncele</h2>
 
+<!-- Ürün listesi container: JavaScript ile dinamik olarak doldurulur -->
 <div class="row" id="product-list">
-    <!-- Ürünler API’den buraya gelecek -->
+    <!-- Ürünler API'den buraya gelecek -->
 </div>
 
+<!-- ============================================
+     JAVASCRIPT: ÜRÜN YÜKLEME VE GÖSTERME
+     API'den ürünleri çekip sayfaya render eder
+     ============================================ -->
 <script>
 
-// Sayfa açılınca yükle
+// Sayfa yüklendiğinde ürünleri otomatik yükle
 document.addEventListener("DOMContentLoaded", function () {
     loadProducts();
 });
 
-// Bu fonksiyonu base.html de çağırıyor!
+// Ürün yükleme fonksiyonu: Arama metni ve kategori ID'sine göre filtreler
+// Bu fonksiyon base.html'de de kullanılıyor (arama ve kategori filtreleme için)
 window.loadProducts = function(searchText = "", categoryId = "") {
+    // API URL'ini oluştur: Arama ve kategori parametrelerini ekle
     let url = "/api/products/";
 
     if (searchText || categoryId) {
@@ -26,24 +38,30 @@ window.loadProducts = function(searchText = "", categoryId = "") {
         if (categoryId) url += "category=" + categoryId;
     }
 
+    // API'den ürünleri çek
     fetch(url)
         .then(res => res.json())
         .then(products => {
             let html = "";
 
+            // Her ürün için kart HTML'i oluştur
             products.forEach(p => {
                 html += `
                 <div class="col-md-3 mb-4">
                     <div class="card h-100 shadow-sm product-card">
-
+                        <!-- Ürün görseli: Varsayılan placeholder kullanılır -->
                         <img src="${p.image_url ?? 'https://via.placeholder.com/300x300'}"
                              class="card-img-top" alt="${p.name}">
                         
                         <div class="card-body">
+                            <!-- Firma adı: Varsa gösterilir -->
                             ${p.company_name ? `<small class="text-muted d-block mb-1">🏢 ${p.company_name}</small>` : ''}
+                            <!-- Ürün adı -->
                             <h5 class="card-title">${p.name}</h5>
+                            <!-- Ürün fiyatı: Yeşil renkte vurgulanmış -->
                             <p class="text-success fw-bold">${p.price} TL</p>
 
+                            <!-- Ürün detay sayfasına yönlendirme butonu -->
                            <a href="/urun/${p.id}/"
    class="btn btn-success w-100">
    İncele
@@ -55,6 +73,7 @@ window.loadProducts = function(searchText = "", categoryId = "") {
                 `;
             });
 
+            // Oluşturulan HTML'i sayfaya ekle
             document.getElementById("product-list").innerHTML = html;
         });
 }

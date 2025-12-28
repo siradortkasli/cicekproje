@@ -21,10 +21,11 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("accounts/", include("accounts.urls")),
-    path("firma/", include("company.urls")),
-    path('', include('store.urls')),
+    path("accounts/", include("accounts.urls")),  # Kullanıcı giriş/kayıt
+    path("firma/", include("company.urls")),  # Firma paneli
+    path('', include('store.urls')),  # Ana uygulama (ürünler, sepet, sipariş)
 ]
 
+# Geliştirme modunda medya dosyalarını serve et
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

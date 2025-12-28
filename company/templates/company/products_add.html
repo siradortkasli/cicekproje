@@ -1,6 +1,11 @@
 {% extends "company/cbase.html" %}
 {% block content %}
 
+<!-- ============================================
+     YENİ ÜRÜN EKLEME SAYFASI
+     Firma panelinde yeni ürün oluşturma formu
+     ============================================ -->
+
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -9,35 +14,43 @@
                     <h3>Yeni Ürün Ekle</h3>
                 </div>
                 <div class="card-body">
+                    <!-- Hata mesajı gösterimi: Form validasyon hataları -->
                     {% if error %}
                     <div class="alert alert-danger">{{ error }}</div>
                     {% endif %}
 
+                    <!-- Yeni ürün ekleme formu: POST metodu ile yeni ürün oluşturur -->
                     <form method="POST">
                         {% csrf_token %}
                         
+                        <!-- Ürün adı: Zorunlu alan -->
                         <div class="mb-3">
                             <label class="form-label">Ürün Adı *</label>
                             <input type="text" name="name" class="form-control" required>
                         </div>
 
+                        <!-- Ürün açıklaması: Detaylı ürün bilgisi (opsiyonel) -->
                         <div class="mb-3">
                             <label class="form-label">Açıklama</label>
                             <textarea name="description" class="form-control" rows="4"></textarea>
                         </div>
 
+                        <!-- Fiyat ve stok bilgileri: Yan yana iki sütun -->
                         <div class="row">
+                            <!-- Fiyat: Zorunlu alan, ondalık sayı desteği -->
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Fiyat (TL) *</label>
                                 <input type="number" name="price" step="0.01" class="form-control" required>
                             </div>
 
+                            <!-- Stok miktarı: Varsayılan değer 0 -->
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Stok</label>
                                 <input type="number" name="stock" class="form-control" value="0">
                             </div>
                         </div>
 
+                        <!-- Kategori seçimi: Dropdown menüden kategori seçimi -->
                         <div class="mb-3">
                             <label class="form-label">Kategori</label>
                             <select name="category" class="form-select">
@@ -48,12 +61,14 @@
                             </select>
                         </div>
 
+                        <!-- Ürün görsel URL: Ürün görselinin internet adresi -->
                         <div class="mb-3">
                             <label class="form-label">Ürün Görsel URL</label>
                             <input type="url" name="image_url" class="form-control" 
                                    placeholder="https://example.com/image.jpg">
                         </div>
 
+                        <!-- Video var mı: Ürünün video içeriği olup olmadığını belirtir -->
                         <div class="mb-3">
                             <div class="form-check">
                                 <input type="checkbox" name="has_video" class="form-check-input" id="has_video">
@@ -63,6 +78,7 @@
                             </div>
                         </div>
 
+                        <!-- Premium ürün: Özel ürün işaretleme -->
                         <div class="mb-3">
                             <div class="form-check">
                                 <input type="checkbox" name="is_premium" class="form-check-input" id="is_premium">
@@ -72,10 +88,12 @@
                             </div>
                         </div>
 
+                        <!-- Bilgilendirme mesajı: Admin onayı gerektiğini bildirir -->
                         <div class="alert alert-info">
                             <small>⚠️ Ürününüz admin onayından sonra sitede görünecektir.</small>
                         </div>
 
+                        <!-- Form butonları: Ekle ve İptal -->
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-success">Ürünü Ekle</button>
                             <a href="{% url 'company_products' %}" class="btn btn-secondary">İptal</a>

@@ -1,13 +1,21 @@
 {% extends "company/cbase.html" %}
 {% block content %}
 
+<!-- ============================================
+     SİPARİŞ LİSTELEME SAYFASI
+     Firma panelinde tüm siparişleri görüntüleme ve yönetme sayfası
+     ============================================ -->
+
 <div class="container mt-4">
     <h2>Siparişlerim</h2>
 
+    <!-- Sipariş listesi varsa tablo göster -->
     {% if order_items %}
     <div class="table-responsive">
+        <!-- Sipariş bilgilerini gösteren ana tablo -->
         <table class="table table-striped">
             <thead>
+                <!-- Tablo başlıkları: Sipariş detaylarını gösteren sütunlar -->
                 <tr>
                     <th>Sipariş No</th>
                     <th>Ürün</th>
@@ -22,16 +30,26 @@
                 </tr>
             </thead>
             <tbody>
+                <!-- Her sipariş kalemi için tablo satırı oluştur -->
                 {% for item in order_items %}
                 <tr>
+                    <!-- Sipariş numarası: Benzersiz sipariş ID'si -->
                     <td>#{{ item.order.id }}</td>
+                    
+                    <!-- Ürün bilgileri: Ürün görseli ve adı -->
                     <td>
                         <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" 
                              style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px; margin-right: 10px;">
                         {{ item.product.name }}
                     </td>
+                    
+                    <!-- Sipariş miktarı: Kaç adet ürün sipariş edildi -->
                     <td>{{ item.quantity }}</td>
+                    
+                    <!-- Ürün fiyatı: Tek birim fiyatı -->
                     <td>{{ item.price }} TL</td>
+                    
+                    <!-- Müşteri bilgileri: İsim, telefon ve kullanıcı adı -->
                     <td>
                         {% if item.order.customer_name %}
                             <strong>{{ item.order.customer_name }}</strong><br>
@@ -43,6 +61,8 @@
                             <br><small class="text-muted">👤 {{ item.order.user.username }}</small>
                         {% endif %}
                     </td>
+                    
+                    <!-- Teslimat adresi: Şehir ve detaylı adres bilgisi -->
                     <td>
                         {% if item.order.city %}
                             <strong>{{ item.order.city }}</strong><br>
@@ -53,6 +73,8 @@
                             <small class="text-muted">-</small>
                         {% endif %}
                     </td>
+                    
+                    <!-- Sipariş durumu: Renkli badge ile durum gösterimi (Hazırlanıyor, Onay Bekliyor, Yola Çıktı, Teslim Edildi) -->
                     <td>
                         <span class="badge 
                             {% if item.order.status == 'PREPARING' %}bg-warning
@@ -63,33 +85,46 @@
                             {{ item.order.get_status_display }}
                         </span>
                     </td>
+                    <!-- Hazırlık fotoğrafı: Firma ürünü hazırladığında yüklediği fotoğraf
+                         Eğer fotoğraf varsa göster, yoksa yükleme input'u göster -->
                     <td>
                         {% if item.preparation_image %}
+                            <!-- Fotoğraf yüklenmiş: Tıklanabilir küçük önizleme (modal açılır) -->
                             <img src="{{ item.preparation_image.url }}" 
                                  style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px; cursor: pointer;"
-                                 onclick="showImageModal('{{ item.preparation_image.url }}')">
+                                 class="prep-image-clickable"
+                                 data-image-url="{{ item.preparation_image.url }}">
                         {% else %}
+                            <!-- Fotoğraf yüklenmemiş: Dosya seçme input'u -->
                             <input type="file" 
                                    id="prep_image_{{ item.id }}"
                                    accept="image/*" 
-                                   onchange="uploadPreparationImage({{ item.id }}, this)"
-                                   class="form-control form-control-sm" 
+                                   class="form-control form-control-sm prep-image-upload"
+                                   data-item-id="{{ item.id }}"
                                    style="width: 150px;">
                         {% endif %}
                     </td>
+                    
+                    <!-- Kullanıcı onay durumu: Müşterinin fotoğrafı onaylayıp onaylamadığını gösterir -->
                     <td>
                         {% if item.is_user_approved %}
+                            <!-- Onaylandı: Müşteri fotoğrafı onayladı, sipariş yola çıkabilir -->
                             <span class="badge bg-success">✅ Onaylandı</span>
                         {% elif item.preparation_image %}
+                            <!-- Bekliyor: Fotoğraf yüklendi ama müşteri henüz onaylamadı -->
                             <span class="badge bg-warning">⏳ Bekliyor</span>
                         {% else %}
+                            <!-- Fotoğraf yok: Henüz hazırlık fotoğrafı yüklenmedi -->
                             <span class="text-muted">-</span>
                         {% endif %}
                     </td>
+                    
+                    <!-- İşlemler: Sipariş durumu değiştirme, düzenleme, iptal etme ve teslim etme butonları -->
                     <td>
                         <div class="d-flex gap-2 flex-wrap">
-                            <select class="form-select form-select-sm" 
-                                    onchange="updateOrderStatus({{ item.order.id }}, this.value)"
+                            <!-- Sipariş durumu seçici: Dropdown menü ile durum değiştirme -->
+                            <select class="form-select form-select-sm order-status-select" 
+                                    data-order-id="{{ item.order.id }}"
                                     style="width: 180px;">
                                 <option value="PREPARING" {% if item.order.status == 'PREPARING' %}selected{% endif %}>
                                     Hazırlanıyor
@@ -104,22 +139,29 @@
                                     Teslim Edildi
                                 </option>
                             </select>
+                            
+                            <!-- Sipariş düzenleme butonu: Sipariş detaylarını düzenleme sayfasına yönlendirir -->
                             <a href="{% url 'company_order_edit' item.order.id %}" 
                                class="btn btn-info btn-sm" title="Siparişi Düzenle">
                                 ✏️ Düzenle
                             </a>
+                            
+                            <!-- Sipariş iptal butonu: Siparişi iptal etme (sadece iptal edilmemiş siparişlerde görünür) -->
                             {% if not item.order.is_cancelled %}
-                            <button class="btn btn-danger btn-sm" 
-                                    onclick="cancelOrder({{ item.order.id }})"
+                            <button class="btn btn-danger btn-sm cancel-order-btn" 
+                                    data-order-id="{{ item.order.id }}"
                                     title="Siparişi İptal Et">
                                 ❌ İptal Et
                             </button>
                             {% else %}
+                            <!-- İptal edilmiş sipariş: İptal durumu gösterilir -->
                             <span class="badge bg-danger">İptal Edildi</span>
                             {% endif %}
+                            
+                            <!-- Teslim et butonu: Sadece "Yola Çıktı" durumundaki siparişlerde görünür -->
                             {% if item.order.status == 'SHIPPED' %}
-                            <button class="btn btn-success btn-sm" 
-                                    onclick="markAsDelivered({{ item.order.id }})"
+                            <button class="btn btn-success btn-sm mark-delivered-btn" 
+                                    data-order-id="{{ item.order.id }}"
                                     title="Teslim Edildi Olarak İşaretle">
                                 ✅ Teslim Et
                             </button>
@@ -132,13 +174,17 @@
         </table>
     </div>
     {% else %}
+    <!-- Sipariş yoksa bilgilendirme mesajı göster -->
     <div class="alert alert-info">
         Henüz sipariş bulunmamaktadır.
     </div>
     {% endif %}
 </div>
 
-<!-- Image Modal -->
+<!-- ============================================
+     HAZIRLIK FOTOĞRAFI MODAL PENCERESİ
+     Küçük önizleme fotoğrafına tıklandığında büyük görüntüleme için modal
+     ============================================ -->
 <div class="modal fade" id="imageModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -153,14 +199,21 @@
     </div>
 </div>
 
+<!-- ============================================
+     JAVASCRIPT FONKSİYONLARI
+     Sayfa etkileşimleri ve API çağrıları için JavaScript kodları
+     ============================================ -->
 <script>
+// Hazırlık fotoğrafını modal pencerede büyük olarak gösterir
 function showImageModal(imageUrl) {
     document.getElementById('modalImage').src = imageUrl;
     new bootstrap.Modal(document.getElementById('imageModal')).show();
 }
 
+// Sipariş durumunu günceller (Hazırlanıyor, Onay Bekliyor, Yola Çıktı, Teslim Edildi)
+// API'ye POST isteği gönderir ve başarılı olursa sayfayı yeniler
 function updateOrderStatus(orderId, status) {
-    fetch(`/company/orders/${orderId}/update-status/`, {
+    fetch('/company/orders/' + orderId + '/update-status/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -183,6 +236,8 @@ function updateOrderStatus(orderId, status) {
     });
 }
 
+// Siparişi "Teslim Edildi" durumuna geçirir
+// Kullanıcıdan onay alır ve updateOrderStatus fonksiyonunu çağırır
 function markAsDelivered(orderId) {
     if (!confirm('Bu siparişi teslim edildi olarak işaretlemek istediğinize emin misiniz?')) {
         return;
@@ -191,6 +246,8 @@ function markAsDelivered(orderId) {
     updateOrderStatus(orderId, 'DELIVERED');
 }
 
+// Siparişi iptal eder
+// Kullanıcıdan iptal nedeni alır, onay ister ve API'ye gönderir
 function cancelOrder(orderId) {
     let reason = prompt('Siparişi iptal etme nedeninizi yazın:');
     if (!reason || reason.trim() === '') {
@@ -202,7 +259,7 @@ function cancelOrder(orderId) {
         return;
     }
     
-    fetch(`/company/orders/${orderId}/cancel/`, {
+    fetch('/company/orders/' + orderId + '/cancel/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -225,6 +282,8 @@ function cancelOrder(orderId) {
     });
 }
 
+// Hazırlık fotoğrafını yükler
+// FormData kullanarak dosyayı sunucuya gönderir
 function uploadPreparationImage(orderItemId, inputElement) {
     const file = inputElement.files[0];
     if (!file) {
@@ -234,7 +293,7 @@ function uploadPreparationImage(orderItemId, inputElement) {
     const formData = new FormData();
     formData.append('preparation_image', file);
     
-    fetch(`/company/orders/${orderItemId}/upload-image/`, {
+    fetch('/company/orders/' + orderItemId + '/upload-image/', {
         method: 'POST',
         headers: {
             'X-CSRFToken': '{{ csrf_token }}'
@@ -248,15 +307,60 @@ function uploadPreparationImage(orderItemId, inputElement) {
             location.reload();
         } else {
             alert('Hata: ' + data.error);
-            inputElement.value = ''; // Reset input
+            inputElement.value = '';
         }
     })
     .catch(error => {
         console.error('Error:', error);
         alert('Bir hata oluştu');
-        inputElement.value = ''; // Reset input
+        inputElement.value = '';
     });
 }
+
+// ============================================
+// SAYFA YÜKLENDİĞİNDE ÇALIŞAN EVENT LİSTENER'LAR
+// Tüm etkileşimli elementlere event handler'ları ekler
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Hazırlık fotoğrafına tıklama: Modal pencerede büyük göster
+    document.querySelectorAll('.prep-image-clickable').forEach(function(img) {
+        img.addEventListener('click', function() {
+            showImageModal(this.getAttribute('data-image-url'));
+        });
+    });
+    
+    // Sipariş durumu değiştirme: Dropdown menüden durum seçildiğinde güncelle
+    document.querySelectorAll('.order-status-select').forEach(function(select) {
+        select.addEventListener('change', function() {
+            const orderId = this.getAttribute('data-order-id');
+            updateOrderStatus(orderId, this.value);
+        });
+    });
+    
+    // Sipariş iptal butonu: İptal et butonuna tıklama
+    document.querySelectorAll('.cancel-order-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const orderId = this.getAttribute('data-order-id');
+            cancelOrder(orderId);
+        });
+    });
+    
+    // Teslim et butonu: Teslim edildi olarak işaretle butonuna tıklama
+    document.querySelectorAll('.mark-delivered-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const orderId = this.getAttribute('data-order-id');
+            markAsDelivered(orderId);
+        });
+    });
+    
+    // Hazırlık fotoğrafı yükleme: Dosya seçildiğinde otomatik yükle
+    document.querySelectorAll('.prep-image-upload').forEach(function(input) {
+        input.addEventListener('change', function() {
+            const orderItemId = this.getAttribute('data-item-id');
+            uploadPreparationImage(orderItemId, this);
+        });
+    });
+});
 </script>
 
 {% endblock %}

@@ -1,41 +1,60 @@
 {% extends "store/base.html" %}
 {% block content %}
 
+<!-- ============================================
+     SİPARİŞ ONAY SAYFASI
+     Firma tarafından yüklenen hazırlık fotoğraflarını onaylama/reddetme sayfası
+     ============================================ -->
+
 <div class="container mt-5">
     <div class="card">
         <div class="card-header">
             <h3>Sipariş Onayı - #{{ order.id }}</h3>
         </div>
         <div class="card-body">
+            <!-- Onay bekleyen ürünler varsa göster -->
             {% if pending_items %}
             <p class="alert alert-info">
                 Firma hazırladığı ürünlerin fotoğraflarını gönderdi. Lütfen inceleyip onaylayın.
             </p>
 
+            <!-- Her onay bekleyen ürün için kart -->
             {% for item in pending_items %}
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="row">
+                        <!-- Sol taraf: Ürün bilgileri (ad, miktar, fiyat) -->
                         <div class="col-md-4">
                             <h5>{{ item.product.name }}</h5>
                             <p class="text-muted">Miktar: {{ item.quantity }}</p>
                             <p class="text-muted">Fiyat: {{ item.price }} TL</p>
                         </div>
+                        <!-- Orta taraf: Hazırlık fotoğrafı -->
                         <div class="col-md-4 text-center">
                             {% if item.preparation_image %}
+                            <!-- Fotoğraf varsa: Tıklanabilir görsel (modal açılır) -->
                             <img src="{{ item.preparation_image.url }}" 
                                  class="img-fluid" 
                                  style="max-height: 300px; border-radius: 10px; cursor: pointer;"
                                  onclick="showImageModal('{{ item.preparation_image.url }}')">
                             <p class="mt-2"><small>Fotoğrafa tıklayarak büyütebilirsiniz</small></p>
                             {% else %}
+                            <!-- Fotoğraf yoksa: Bilgilendirme mesajı -->
                             <p class="text-muted">Fotoğraf henüz yüklenmedi</p>
                             {% endif %}
                         </div>
+                        <!-- Sağ taraf: Onay ve red butonları -->
                         <div class="col-md-4 text-center">
+                            <!-- Onay butonu: Fotoğrafı onayla ve siparişi yola çıkar -->
                             <button onclick="approveItem({{ item.id }})" 
-                                    class="btn btn-success btn-lg">
+                                    class="btn btn-success btn-lg mb-2">
                                 ✅ Onayla ve Yola Çıkar
+                            </button>
+                            <br>
+                            <!-- Red butonu: Fotoğrafı reddet, firma yeniden yüklemek zorunda -->
+                            <button onclick="rejectItem({{ item.id }})" 
+                                    class="btn btn-danger btn-lg">
+                                ❌ Fotoğrafı Reddet
                             </button>
                         </div>
                     </div>
@@ -43,11 +62,13 @@
             </div>
             {% endfor %}
             {% else %}
+            <!-- Onay bekleyen ürün yoksa bilgilendirme mesajı -->
             <div class="alert alert-success">
                 Tüm ürünler onaylandı veya henüz hazırlık fotoğrafı yüklenmedi.
             </div>
             {% endif %}
 
+            <!-- Sipariş takibine dönüş butonu -->
             <div class="mt-4">
                 <a href="/siparis-takibi/" class="btn btn-primary">Sipariş Takibine Dön</a>
             </div>
@@ -55,7 +76,10 @@
     </div>
 </div>
 
-<!-- Image Modal -->
+<!-- ============================================
+     HAZIRLIK FOTOĞRAFI MODAL PENCERESİ
+     Küçük önizleme fotoğrafına tıklandığında büyük görüntüleme için modal
+     ============================================ -->
 <div class="modal fade" id="imageModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -70,18 +94,52 @@
     </div>
 </div>
 
+<!-- ============================================
+     JAVASCRIPT FONKSİYONLARI
+     Fotoğraf onaylama, reddetme ve modal işlemleri
+     ============================================ -->
 <script>
+// Hazırlık fotoğrafını modal pencerede büyük olarak gösterir
 function showImageModal(imageUrl) {
     document.getElementById('modalImage').src = imageUrl;
     new bootstrap.Modal(document.getElementById('imageModal')).show();
 }
 
+// Ürün fotoğrafını onaylar: Sipariş durumunu "Yola Çıktı" yapar
 function approveItem(itemId) {
     if (!confirm('Bu ürünü onaylayıp yola çıkmasını istiyor musunuz?')) {
         return;
     }
 
-    fetch(`/api/order-item/${itemId}/approve/`, {
+    fetch('/api/order-item/' + itemId + '/approve/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Hata: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu');
+    });
+}
+
+// Ürün fotoğrafını reddeder: Fotoğrafı siler, sipariş durumunu "Hazırlanıyor" yapar
+function rejectItem(itemId) {
+    if (!confirm('Bu ürünün hazırlık fotoğrafını reddetmek istediğinizden emin misiniz? Firma yeniden fotoğraf yüklemek zorunda kalacak.')) {
+        return;
+    }
+
+    fetch('/api/order-item/' + itemId + '/reject/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

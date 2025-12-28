@@ -4,6 +4,8 @@ from .api_service import getCities
 
 print("STORE URLS LOADED")
 
+# Store uygulaması URL yapılandırması
+# Ana sayfa, ürünler, sepet, sipariş ve firma paneli endpoint'leri
 urlpatterns = [
     # 🏠 Ana sayfa
     path('', views.index, name='index'),
@@ -46,9 +48,11 @@ urlpatterns = [
     path("company/orders/<int:order_id>/update-status/", views.company_update_order_status, name="company_update_order_status"),
     path("company/logout/", views.company_logout, name="company_logout"),
     
-    # 👤 USER APPROVAL
+    # 👤 KULLANICI ONAY İŞLEMLERİ
+    # Firma tarafından yüklenen hazırlık fotoğraflarını onaylama/reddetme
     path("order/<int:order_id>/approval/", views.user_order_approval_page, name="user_order_approval"),
     path("api/order-item/<int:order_item_id>/approve/", views.user_approve_order_item, name="user_approve_order_item"),
+    path("api/order-item/<int:order_item_id>/reject/", views.user_reject_order_item, name="user_reject_order_item"),
     
     # 📦 Kullanıcı Siparişleri
     path("siparislerim/", views.my_orders, name="my_orders"),

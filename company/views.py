@@ -1,38 +1,61 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
-from store.models import Company
+from store.models import Company, Product
 
 
+# ============================================
+# FİRMA GİRİŞ İŞLEMİ
+# Firma kullanıcıları için özel giriş sayfası
+# Kontroller: Kullanıcı var mı, şifre doğru mu, aktif mi, firma profili var mı, firma onaylı mı
+# ============================================
 def company_login(request):
-    error = None
-
+    from accounts.models import User
+    
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
 
-        user = authenticate(request, username=username, password=password)
+        # Önce kullanıcıyı bul
+        try:
+            user_obj = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return render(request, "company/clogin.html", {
+                "error": "Kullanıcı adı veya şifre hatalı"
+            })
+        
+        # Şifre kontrolü
+        if not user_obj.check_password(password):
+            return render(request, "company/clogin.html", {
+                "error": "Kullanıcı adı veya şifre hatalı"
+            })
+        
+        # Kullanıcı aktif mi kontrol et
+        if not user_obj.is_active:
+            return render(request, "company/clogin.html", {
+                "error": "Hesabınız aktif değil. Lütfen admin ile iletişime geçin."
+            })
+        
+        # Firma profili var mı ve onaylı mı kontrol et
+        try:
+            company = user_obj.company_profile
+            if not company.is_approved:
+                return render(request, "company/clogin.html", {
+                    "error": "Firma henüz admin tarafından onaylanmadı. Lütfen admin onayını bekleyin."
+                })
+        except Company.DoesNotExist:
+            return render(request, "company/clogin.html", {
+                "error": "Bu kullanıcı bir firmaya ait değil. Firma kaydı yapmak için kayıt sayfasına gidin."
+            })
+        
+        # Her şey tamam, giriş yap
+        login(request, user_obj)
+        return redirect("company_dashboard")
 
-        if user is None:
-            error = "Kullanıcı adı veya şifre hatalı"
-        else:
-            try:
-                company = user.company_profile
-            except Company.DoesNotExist:
-                error = "Bu kullanıcı bir firmaya ait değil"
-            else:
-                if not company.is_approved:
-                    error = "Firma henüz admin tarafından onaylanmadı"
-                else:
-                    login(request, user)
-                    return redirect("company_dashboard")
-
-    return render(request, "company/clogin.html", {"error": error})
-
-
+    return render(request, "company/clogin.html")
 @login_required
 def company_dashboard(request):
-    from store.models import Product, OrderItem
+    from store.models import OrderItem
     
     company = request.user.company_profile
     

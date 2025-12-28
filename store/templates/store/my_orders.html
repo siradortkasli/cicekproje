@@ -1,20 +1,30 @@
 {% extends "store/base.html" %}
 {% block content %}
 
+<!-- ============================================
+     KULLANICI SİPARİŞLERİ SAYFASI
+     Kullanıcının geçmiş tüm siparişlerini görüntüleme sayfası
+     ============================================ -->
+
 <div class="container mt-4">
     <h2 class="mb-4">📦 Siparişlerim</h2>
 
+    <!-- Sipariş listesi varsa kartlar göster -->
     {% if orders %}
     <div class="row">
+        <!-- Her sipariş için kart oluştur -->
         {% for order in orders %}
         <div class="col-12 mb-4">
             <div class="card shadow-sm">
+                <!-- Sipariş başlığı: Sipariş numarası, tarihi ve durumu -->
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <div>
+                        <!-- Sipariş numarası ve oluşturulma tarihi -->
                         <h5 class="mb-0">Sipariş #{{ order.id }}</h5>
                         <small class="text-muted">{{ order.created_at|date:"d.m.Y H:i" }}</small>
                     </div>
                     <div>
+                        <!-- Sipariş durumu: Renkli badge ile durum gösterimi -->
                         <span class="badge 
                             {% if order.status == 'PREPARING' %}bg-warning
                             {% elif order.status == 'WAITING_APPROVAL' %}bg-info
@@ -24,6 +34,7 @@
                             {% endif %}">
                             {{ order.get_status_display }}
                         </span>
+                        <!-- İptal durumu: Eğer sipariş iptal edildiyse göster -->
                         {% if order.is_cancelled %}
                         <span class="badge bg-danger">İptal Edildi</span>
                         {% endif %}
@@ -31,21 +42,28 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
+                        <!-- Sol taraf: Siparişteki ürünler listesi -->
                         <div class="col-md-8">
                             <h6 class="fw-bold mb-3">Ürünler:</h6>
+                            <!-- Her sipariş kalemi için ürün bilgisi -->
                             {% for item in order.items.all %}
                             <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                                <!-- Ürün görseli -->
                                 <img src="{{ item.image_url|default:item.product.image_url }}" 
                                      style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;">
                                 <div class="flex-grow-1">
+                                    <!-- Ürün adı -->
                                     <div class="fw-bold">{{ item.product.name }}</div>
+                                    <!-- Miktar ve fiyat bilgisi -->
                                     <div class="text-muted small">
                                         {{ item.quantity }} adet × {{ item.price }} TL
                                     </div>
+                                    <!-- Firma adı: Varsa gösterilir -->
                                     {% if item.product.company %}
                                     <div class="text-muted small">🏢 {{ item.product.company.name }}</div>
                                     {% endif %}
                                 </div>
+                                <!-- Ürün toplam fiyatı: Miktar × Birim fiyat -->
                                 <div class="fw-bold">
                                     {{ item.quantity }} × {{ item.price }} TL = 
                                     {% widthratio item.quantity 1 item.price %} TL
@@ -53,22 +71,28 @@
                             </div>
                             {% endfor %}
                         </div>
+                        <!-- Sağ taraf: Teslimat bilgileri -->
                         <div class="col-md-4">
                             <div class="card bg-light">
                                 <div class="card-body">
                                     <h6 class="fw-bold">Teslimat Bilgileri</h6>
+                                    <!-- Alıcı adı: Varsa gösterilir -->
                                     {% if order.customer_name %}
                                     <p class="mb-1"><strong>Alıcı:</strong> {{ order.customer_name }}</p>
                                     {% endif %}
+                                    <!-- Telefon numarası: Varsa gösterilir -->
                                     {% if order.phone_number %}
                                     <p class="mb-1"><strong>Telefon:</strong> {{ order.phone_number }}</p>
                                     {% endif %}
+                                    <!-- Şehir: Varsa gösterilir -->
                                     {% if order.city %}
                                     <p class="mb-1"><strong>Şehir:</strong> {{ order.city }}</p>
                                     {% endif %}
+                                    <!-- Adres: Varsa gösterilir (kısaltılmış) -->
                                     {% if order.address %}
                                     <p class="mb-1"><strong>Adres:</strong> {{ order.address|truncatewords:10 }}</p>
                                     {% endif %}
+                                    <!-- İptal nedeni: Eğer sipariş iptal edildiyse göster -->
                                     {% if order.is_cancelled and order.cancellation_reason %}
                                     <div class="alert alert-danger mt-2 mb-0">
                                         <strong>İptal Nedeni:</strong><br>
@@ -79,12 +103,15 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Sipariş özeti: Toplam tutar ve sipariş takibi butonu -->
                     <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                         <div>
+                            <!-- Toplam tutar: Yeşil renkte vurgulanmış -->
                             <strong>Toplam Tutar:</strong>
                             <span class="fs-4 text-success fw-bold ms-2">{{ order.total_price|floatformat:2 }} TL</span>
                         </div>
                         <div>
+                            <!-- Sipariş takibi sayfasına yönlendirme -->
                             <a href="/siparis-takibi/" class="btn btn-outline-primary btn-sm">
                                 📦 Sipariş Takibi
                             </a>
@@ -96,6 +123,7 @@
         {% endfor %}
     </div>
     {% else %}
+    <!-- Sipariş yoksa bilgilendirme mesajı -->
     <div class="alert alert-info text-center">
         <h5>Henüz siparişiniz bulunmamaktadır.</h5>
         <p class="mb-0">İlk siparişinizi vermek için <a href="/">ürünleri</a> inceleyebilirsiniz.</p>

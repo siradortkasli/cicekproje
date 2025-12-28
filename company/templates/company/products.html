@@ -1,7 +1,13 @@
 {% extends "company/cbase.html" %}
 {% block content %}
 
+<!-- ============================================
+     ÜRÜN LİSTELEME SAYFASI
+     Firma panelinde tüm ürünleri görüntüleme ve yönetme sayfası
+     ============================================ -->
+
 <div class="container mt-4">
+    <!-- Sayfa başlığı ve yeni ürün ekleme butonu -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Ürünlerim</h2>
         <a href="{% url 'company_product_add' %}" class="btn btn-success">
@@ -9,10 +15,13 @@
         </a>
     </div>
 
+    <!-- Ürün listesi varsa tablo göster -->
     {% if products %}
     <div class="table-responsive">
+        <!-- Ürün bilgilerini gösteren ana tablo -->
         <table class="table table-striped">
             <thead>
+                <!-- Tablo başlıkları: Ürün detaylarını gösteren sütunlar -->
                 <tr>
                     <th>Ürün Adı</th>
                     <th>Fiyat</th>
@@ -24,24 +33,34 @@
                 </tr>
             </thead>
             <tbody>
+                <!-- Her ürün için tablo satırı oluştur -->
                 {% for product in products %}
                 <tr>
+                    <!-- Ürün adı ve görseli: Küçük önizleme görseli ile birlikte -->
                     <td>
                         <img src="{{ product.image_url }}" alt="{{ product.name }}" 
                              style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px; margin-right: 10px;">
                         {{ product.name }}
                     </td>
+                    <!-- Ürün fiyatı: TL cinsinden -->
                     <td>{{ product.price }} TL</td>
+                    <!-- Stok miktarı: Mevcut stok bilgisi -->
                     <td>{{ product.stock }}</td>
+                    <!-- Kategori: Ürünün ait olduğu kategori (yoksa "-" gösterir) -->
                     <td>{{ product.category.name|default:"-" }}</td>
+                    <!-- Onay durumu: Admin onayı alıp almadığını gösterir -->
                     <td>
                         {% if product.is_approved %}
+                            <!-- Onaylandı: Ürün sitede görünüyor -->
                             <span class="badge bg-success">✅ Onaylandı</span>
                         {% else %}
+                            <!-- Onay bekliyor: Admin onayı bekleniyor -->
                             <span class="badge bg-warning">⏳ Onay Bekliyor</span>
                         {% endif %}
                     </td>
+                    <!-- Oluşturulma tarihi: Ürünün eklenme tarihi ve saati -->
                     <td>{{ product.created_at|date:"d.m.Y H:i" }}</td>
+                    <!-- İşlemler: Ürünü düzenleme butonu -->
                     <td>
                         <a href="{% url 'company_product_edit' product.id %}" 
                            class="btn btn-sm btn-outline-primary">
@@ -54,6 +73,7 @@
         </table>
     </div>
     {% else %}
+    <!-- Ürün yoksa bilgilendirme mesajı ve yeni ürün ekleme linki -->
     <div class="alert alert-info">
         Henüz ürün eklemediniz. <a href="{% url 'company_product_add' %}">İlk ürününüzü ekleyin</a>
     </div>

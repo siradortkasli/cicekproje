@@ -1,6 +1,11 @@
 {% extends "store/base.html" %}
 {% block content %}
 
+<!-- ============================================
+     SEPET SAYFASI
+     Kullanıcının sepetindeki ürünleri görüntüleme ve yönetme sayfası
+     ============================================ -->
+
 <style>
 .cart-box {
     background: #fff;
@@ -70,85 +75,88 @@
 </style>
 
 <div class="container mt-4">
-
+    <!-- Sayfa başlığı: Sepetteki ürün sayısını gösterir -->
     <h2 class="fw-bold mb-4">🛒 Sepetim ({{ cart|length }} Ürün)</h2>
 
     <div class="row">
-
-        <!-- SOL -->
+        <!-- Sol taraf: Sepet içeriği (ürün listesi) -->
         <div class="col-md-8">
             <div class="cart-box" id="cartItemsBox">
-                
+                <!-- Uyarı mesajı: Çoklu ürün siparişi için bilgilendirme -->
                 <div class="alert alert-warning mb-4">
                     Birden fazla ürün sipariş ettiğiniz için teslimat zamanları değişebilir.
                 </div>
                 
+                <!-- Her sepet öğesi için kart -->
                 {% for item in cart %}
                 <div class="cart-item" data-product="{{ item.product_id }}" data-price="{{ item.price }}">
-
+                    <!-- Ürün görseli: Varsayılan placeholder kullanılır -->
                     <img src="{{ item.image_url|default:'https://placehold.co/150x150?text=Urun' }}">
 
-
+                    <!-- Ürün bilgileri: Ad, teslimat bilgileri, miktar -->
                     <div class="flex-grow-1">
+                        <!-- Ürün adı -->
                         <h5 class="fw-bold mb-1">{{ item.name }}</h5>
 
+                        <!-- Teslimat bilgisi: Ücretsiz teslimat vurgusu -->
                         <div class="text-success fw-bold mb-1">
                             Ücretsiz Teslimat
                         </div>
 
+                        <!-- Teslimat detayları: Şehir, tarih ve saat aralığı -->
                         <div class="text-muted small">
                             📍 {{ item.city }}<br>
                             📅 {{ item.delivery_date }}
                             {% if item.time_range %}
                               <span class="badge-time ms-2">{{ item.time_range }}</span>
                             {% endif %}
-
                         </div>
 
+                        <!-- Ürün miktarı -->
                         <div class="mt-2 small">
                             Adet: <strong>{{ item.quantity }}</strong>
                         </div>
                     </div>
 
+                    <!-- Sağ taraf: Fiyat, sil butonu ve miktar kontrolü -->
                     <div class="fw-bold fs-5 text-end">
+                        <!-- Ürün birim fiyatı -->
                         {{ item.price }} TL
 
+                        <!-- Ürünü sepetten silme butonu -->
                         <button class="btn btn-sm btn-outline-danger mt-2 remove-btn"
                             data-product="{{ item.product_id }}">
                             🗑️ Sil
                         </button>
 
-
-
+                        <!-- Miktar kontrolü: Artırma ve azaltma butonları -->
                         <div class="d-flex align-items-center mt-2 qty-box"
      data-product="{{ item.product_id }}">
-
-    <button class="btn btn-sm btn-outline-secondary qty-minus">−</button>
-
-    <span class="mx-2 fw-bold qty-value">{{ item.quantity }}</span>
-
-    <button class="btn btn-sm btn-outline-secondary qty-plus">+</button>
-</div>
-
-
+                            <!-- Miktar azaltma butonu -->
+                            <button class="btn btn-sm btn-outline-secondary qty-minus">−</button>
+                            <!-- Mevcut miktar gösterimi -->
+                            <span class="mx-2 fw-bold qty-value">{{ item.quantity }}</span>
+                            <!-- Miktar artırma butonu -->
+                            <button class="btn btn-sm btn-outline-secondary qty-plus">+</button>
+                        </div>
                     </div>
-
                 </div>
                 {% endfor %}
-
             </div>
         </div>
 
-        <!-- SAĞ -->
+        <!-- Sağ taraf: Sipariş özeti ve ödeme butonu -->
         <div class="col-md-4">
             <div class="cart-summary">
                 <h4 class="fw-bold mb-3">Sipariş Özeti</h4>
 
-<div class="d-flex justify-content-between">
-    <span>Ara Toplam</span>
-    <strong id="subtotal">{{ total|floatformat:2}} TL</strong>
-</div>
+                <!-- Ara toplam: Tüm ürünlerin toplam fiyatı -->
+                <div class="d-flex justify-content-between">
+                    <span>Ara Toplam</span>
+                    <strong id="subtotal">{{ total|floatformat:2}} TL</strong>
+                </div>
 
+                <!-- Teslimat ücreti: Ücretsiz teslimat -->
                 <div class="d-flex justify-content-between mt-2">
                     <span>Teslimat</span>
                     <strong class="text-success">Ücretsiz</strong>
@@ -156,19 +164,22 @@
 
                 <hr>
 
-<div class="d-flex justify-content-between fs-5 fw-bold">
-    <span>Toplam</span>
-    <span id="total">{{ total|floatformat:2 }} TL</span>
-</div>
+                <!-- Toplam tutar: Final ödeme tutarı -->
+                <div class="d-flex justify-content-between fs-5 fw-bold">
+                    <span>Toplam</span>
+                    <span id="total">{{ total|floatformat:2 }} TL</span>
+                </div>
 
+                <!-- Ödeme sayfasına yönlendirme butonu -->
                 <button class="buy-btn mt-4" onclick="checkout()">
                     💳 Satın Al
                 </button>
             </div>
         </div>
-
     </div>
 </div>
+
+<!-- Boş sepet şablonu: Sepet boşaldığında gösterilecek içerik -->
 <div id="emptyCartTemplate" class="d-none">
     <div class="cart-box text-center py-5">
         <h2 class="mb-3">🛒 Sepetin boş</h2>
@@ -181,7 +192,12 @@
     </div>
 </div>
 
+<!-- ============================================
+     JAVASCRIPT FONKSİYONLARI
+     Sepet işlemleri: Toplam hesaplama, miktar güncelleme, silme, ödeme
+     ============================================ -->
 <script>
+// Sepet toplamını günceller: Tüm ürünlerin fiyat × miktar toplamını hesaplar
 function updateTotals() {
     let total = 0;
 
@@ -194,27 +210,30 @@ function updateTotals() {
     document.getElementById("subtotal").innerText = total.toFixed(2) + " TL";
     document.getElementById("total").innerText = total.toFixed(2) + " TL";
 }
+
+// Ödeme sayfasına yönlendirir: Sepet boşsa uyarı verir
 function checkout() {
     const itemCount = document.querySelectorAll(".cart-item").length;
 
-if (itemCount === 0) {
-    document.querySelector(".cart-summary").insertAdjacentHTML(
-        "afterbegin",
-        `<div class="alert alert-danger mb-3">
-            🛒 Sepetin boş. Lütfen ürün ekle.
-        </div>`
-    );
-    return;
-}
+    // Sepet boşsa uyarı göster
+    if (itemCount === 0) {
+        document.querySelector(".cart-summary").insertAdjacentHTML(
+            "afterbegin",
+            `<div class="alert alert-danger mb-3">
+                🛒 Sepetin boş. Lütfen ürün ekle.
+            </div>`
+        );
+        return;
+    }
 
-
+    // Ödeme sayfasına yönlendir
     window.location.href = "/checkout/";
 }
 
 
+// Event delegation: Tüm sepet işlemleri için tek event listener
 document.addEventListener("click", function (e) {
-
-    /* 🗑️ SİL */
+    // Ürün silme: Sepetten ürünü kaldırır
     if (e.target.classList.contains("remove-btn")) {
         const productId = e.target.dataset.product;
         const itemDiv = e.target.closest(".cart-item");
@@ -226,20 +245,21 @@ document.addEventListener("click", function (e) {
         })
         .then(res => res.json())
         .then(data => {
-if (data.success) {
-    itemDiv.classList.add("removing");
-    setTimeout(() => {
-        itemDiv.remove();
-        updateCartCount(-1); // 🔴 ANINDA AZALSIN
-        updateTotals();
-        checkIfCartEmpty();
-    }, 300);
-}
-});
-return;
-
+            if (data.success) {
+                // Animasyonlu silme: Önce fade out, sonra DOM'dan kaldır
+                itemDiv.classList.add("removing");
+                setTimeout(() => {
+                    itemDiv.remove();
+                    updateCartCount(-1); // Sepet sayacını güncelle
+                    updateTotals(); // Toplamı yeniden hesapla
+                    checkIfCartEmpty(); // Sepet boş mu kontrol et
+                }, 300);
+            }
+        });
+        return;
     }
 
+    // Miktar artırma/azaltma: Sadece ilgili butonlara tıklanırsa devam et
     if (!e.target.classList.contains("qty-minus") &&
         !e.target.classList.contains("qty-plus")) return;
 
@@ -249,29 +269,31 @@ return;
 
     let qty = parseInt(qtySpan.innerText);
 
+    // Miktarı artır veya azalt
     if (e.target.classList.contains("qty-plus")) {
         qty++;
     } else {
         qty--;
     }
 
-if (qty < 1) {
-    fetch("/api/cart/remove/", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ product_id: productId })
-    }).then(() => {
-    box.closest(".cart-item").remove();
+    // Miktar 0'dan küçükse ürünü sepetten kaldır
+    if (qty < 1) {
+        fetch("/api/cart/remove/", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ product_id: productId })
+        }).then(() => {
+            box.closest(".cart-item").remove();
+            updateTotals();
+            updateCartCount(-1);
+            checkIfCartEmpty();
+        });
+        return;
+    }
+
+    // Miktarı güncelle ve API'ye gönder
+    qtySpan.innerText = qty;
     updateTotals();
-    updateCartCount(-1);
-    checkIfCartEmpty();
-});
-return;
-
-}
-
-qtySpan.innerText = qty;
-updateTotals();
     fetch("/api/cart/update/", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -282,7 +304,10 @@ updateTotals();
     })
 });
 
+// Sayfa yüklendiğinde toplamı hesapla
 updateTotals();
+
+// Sepet boş mu kontrol et: Boşsa boş sepet mesajını göster
 function checkIfCartEmpty() {
     const items = document.querySelectorAll(".cart-item");
     const box = document.getElementById("cartItemsBox");
@@ -291,6 +316,8 @@ function checkIfCartEmpty() {
         box.innerHTML = document.getElementById("emptyCartTemplate").innerHTML;
     }
 }
+
+// Sayfa yüklendiğinde sepet boş mu kontrol et
 checkIfCartEmpty();
 
 </script>

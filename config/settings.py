@@ -30,6 +30,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
 
 
 # Application definition
+# Özel kullanıcı modeli: Django'nun varsayılan User modeli yerine accounts.User kullanılır
 AUTH_USER_MODEL = "accounts.User"
 
 INSTALLED_APPS = [
@@ -78,16 +79,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# SQL Server veritabanı yapılandırması
+# Windows Kimlik Doğrulaması kullanılıyor (trusted_connection)
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
-        'NAME': 'CicekProje',  # Veritabanı Adı (Doğru)
-        'HOST': 'SIR-A\HP VICTUS', # Sunucu Adı (Sizin SQL Server adınız) veya 'localhost'
+        'NAME': 'CicekProje',  # Veritabanı Adı
+        'HOST': 'SIR-A\HP VICTUS', # Sunucu Adı (SQL Server adı) veya 'localhost'
         'PORT': '1433',
-
-        # SQL SERVER KİMLİK DOĞRULAMASI BİLGİLERİNİ KALDIRIN
-        # 'USER': 'sa',
-        # 'PASSWORD': '12345',
 
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
@@ -145,6 +144,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/"
-LOGIN_URL = "/accounts/login/"
+# Kimlik doğrulama yönlendirmeleri
+LOGIN_REDIRECT_URL = "/"  # Giriş sonrası ana sayfaya yönlendir
+LOGOUT_REDIRECT_URL = "/"  # Çıkış sonrası ana sayfaya yönlendir
+LOGIN_URL = "/accounts/login/"  # Giriş gerektiren sayfalarda yönlendirilecek URL

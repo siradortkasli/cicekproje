@@ -4,6 +4,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 print("🔥 YENİ FAKE API SERVICE KULLANILIYOR!")
+
+# Türkiye şehirlerini döndüren API endpoint'i
 @api_view(['GET'])
 def getCities(request):
     cities = [
@@ -21,22 +23,8 @@ def getCities(request):
     return Response({
         "cities": cities
     })
-@api_view(['POST'])
-def addToCart(request):
-    product_id = request.data.get("product_id")
-    quantity = request.data.get("quantity", 1)
-
-    cart = request.session.get("cart", [])
-
-    cart.append({
-        "product_id": product_id,
-        "quantity": quantity
-    })
-
-    request.session["cart"] = cart
-
-    return Response({"message": "Sepete eklendi!"})
-
+# FakeStore API'den ürünleri çekip veritabanına kaydeden fonksiyon
+# Admin panelinden çağrılabilir
 def save_products_to_db():
     url = "https://fakestoreapi.com/products"
     response = requests.get(url)

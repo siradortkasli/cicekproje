@@ -12,7 +12,10 @@ class OrderItemInline(admin.TabularInline):
     extra = 0
     readonly_fields = ("product", "quantity", "price", "preparation_image", "is_user_approved")
 
-# COMPANY (FİRMA) ADMIN
+# ============================================
+# FİRMA ADMIN PANELİ
+# Firmaları onaylama/reddetme işlemleri
+# ============================================
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ("name", "user", "is_approved", "created_at")
@@ -20,10 +23,12 @@ class CompanyAdmin(admin.ModelAdmin):
     search_fields = ("name", "user__username")
     actions = ["approve_companies", "reject_companies"]
 
+    # Toplu firma onaylama
     def approve_companies(self, request, queryset):
         queryset.update(is_approved=True)
         self.message_user(request, "Seçilen firmalar onaylandı.")
 
+    # Toplu firma reddetme
     def reject_companies(self, request, queryset):
         queryset.update(is_approved=False)
         self.message_user(request, "Seçilen firmalar reddedildi.")
@@ -31,6 +36,10 @@ class CompanyAdmin(admin.ModelAdmin):
     approve_companies.short_description = "Firmaları Onayla"
     reject_companies.short_description = "Firmaları Reddet"
 
+# ============================================
+# ÜRÜN ADMIN PANELİ
+# Ürün onaylama/reddetme ve API'den ürün çekme işlemleri
+# ============================================
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ("name","company", "price", "category","is_approved", "is_active","created_at")
@@ -39,14 +48,17 @@ class ProductAdmin(admin.ModelAdmin):
     inlines = [ProductImageInline]
     actions = ["approve_products", "reject_products", "fetch_api_products"]
 
+    # Toplu ürün onaylama
     def approve_products(self, request, queryset):
         queryset.update(is_approved=True)
         self.message_user(request, "Ürünler onaylandı.")
 
+    # Toplu ürün reddetme
     def reject_products(self, request, queryset):
         queryset.update(is_approved=False)
         self.message_user(request, "Ürünler reddedildi.")
 
+    # FakeStore API'den ürün çekme
     def fetch_api_products(self, request, queryset):
         save_products_to_db()
         self.message_user(request, "API'den ürünler başarıyla çekildi!")

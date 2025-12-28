@@ -1,6 +1,12 @@
 {% extends "store/base.html" %}
 {% block content %}
 
+<!-- ============================================
+     SİPARİŞ TAKİP SAYFASI
+     Kullanıcının sipariş numarası ile sipariş durumunu sorguladığı sayfa
+     Hazırlık fotoğraflarını onaylama/reddetme özelliği içerir
+     ============================================ -->
+
 <style>
 .track-box {
     max-width: 900px;
@@ -123,8 +129,10 @@
 
 <div class="container mt-4">
     <div class="track-box">
+        <!-- Sayfa başlığı -->
         <h3 class="fw-bold mb-3">📦 Sipariş Takibi</h3>
 
+        <!-- Sipariş numarası girişi: Kullanıcı sipariş numarasını buraya girer -->
         <div class="mb-3">
             <label class="fw-bold">Sipariş Numaranız</label>
             <input id="orderIdInput"
@@ -132,15 +140,20 @@
                    placeholder="Örn: #7 veya 7">
         </div>
 
+        <!-- Sorgula butonu: Sipariş bilgilerini API'den çeker -->
         <button class="btn btn-success w-100 mb-3" onclick="trackOrder()">
             🔍 Siparişi Sorgula
         </button>
 
+        <!-- Sonuç alanı: Sipariş bilgileri buraya dinamik olarak render edilir -->
         <div id="resultArea"></div>
     </div>
 </div>
 
-<!-- Image Modal -->
+<!-- ============================================
+     HAZIRLIK FOTOĞRAFI MODAL PENCERESİ
+     Küçük önizleme fotoğrafına tıklandığında büyük görüntüleme için modal
+     ============================================ -->
 <div class="modal fade" id="imageModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -155,16 +168,24 @@
     </div>
 </div>
 
+<!-- ============================================
+     JAVASCRIPT FONKSİYONLARI
+     Sipariş sorgulama, fotoğraf onaylama/reddetme, modal işlemleri
+     ============================================ -->
 <script>
+// Sipariş durumunu sorgular: API'den sipariş bilgilerini çeker ve sayfaya render eder
 function trackOrder() {
+    // Sipariş numarasını al ve # işaretini temizle
     let orderId = document.getElementById("orderIdInput").value.trim();
     orderId = orderId.replace("#", "");
 
+    // Sipariş numarası boşsa uyarı ver
     if (!orderId) {
         alert("Sipariş numarası giriniz");
         return;
     }
 
+    // API'ye sipariş sorgulama isteği gönder
     fetch("/api/order/track/", {
         method: "POST",
         headers: {
@@ -175,6 +196,7 @@ function trackOrder() {
     })
     .then(res => res.json())
     .then(data => {
+        // Hata varsa hata mesajını göster
         if (!data.success) {
             document.getElementById("resultArea").innerHTML =
                 `<div class="alert alert-danger mt-3">${data.error}</div>`;
@@ -255,9 +277,13 @@ function trackOrder() {
                                      style="margin-top: 10px;">
                                 ${!item.is_user_approved ? `
                                     <div class="mt-2">
-                                        <button class="btn btn-success btn-sm" 
+                                        <button class="btn btn-success btn-sm me-2" 
                                                 onclick="approveItem(${item.id})">
                                             ✅ Fotoğrafı Onayla ve Yola Çıkar
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" 
+                                                onclick="rejectItem(${item.id})">
+                                            ❌ Fotoğrafı Reddet
                                         </button>
                                     </div>
                                 ` : `
@@ -290,17 +316,47 @@ function trackOrder() {
     });
 }
 
+// Hazırlık fotoğrafını modal pencerede büyük olarak gösterir
 function showImageModal(imageUrl) {
     document.getElementById('modalImage').src = imageUrl;
     new bootstrap.Modal(document.getElementById('imageModal')).show();
 }
 
+// Ürün fotoğrafını onaylar: Sipariş durumunu "Yola Çıktı" yapar
 function approveItem(itemId) {
     if (!confirm('Bu ürünün hazırlık fotoğrafını onaylayıp yola çıkmasını istiyor musunuz?')) {
         return;
     }
 
-    fetch(`/api/order-item/${itemId}/approve/`, {
+    fetch('/api/order-item/' + itemId + '/approve/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            trackOrder(); // Sayfayı yenile
+        } else {
+            alert('Hata: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu');
+    });
+}
+
+// Ürün fotoğrafını reddeder: Fotoğrafı siler, sipariş durumunu "Hazırlanıyor" yapar
+function rejectItem(itemId) {
+    if (!confirm('Bu ürünün hazırlık fotoğrafını reddetmek istediğinizden emin misiniz? Firma yeniden fotoğraf yüklemek zorunda kalacak.')) {
+        return;
+    }
+
+    fetch('/api/order-item/' + itemId + '/reject/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -1,7 +1,14 @@
 {% extends "store/base.html" %}
 
 {% block content %}
+
+<!-- ============================================
+     ANA SAYFA (INDEX)
+     Kullanıcıların ilk gördüğü sayfa, ürün listesi ve banner
+     ============================================ -->
+
 <head>
+  <!-- Sayfa stilleri: Banner ve ürün kartları için özel tasarım -->
   <style>
     .custom-banner {
     height: 300px;
@@ -70,9 +77,13 @@ html {
 
   </style>
 </head>
-<div class="row g-4 mb-5">
 
-    <!-- ÇİÇEKLER -->
+<!-- ============================================
+     BANNER BÖLÜMÜ
+     Promosyon ve tanıtım için görsel banner
+     ============================================ -->
+<div class="row g-4 mb-5">
+    <!-- Çiçekler banner: Ana sayfa tanıtım banner'ı -->
     <div class="col-md-6">
         <div class="custom-banner flower-banner">
             <div class="banner-content">
@@ -81,44 +92,62 @@ html {
                     Bir çiçek bazen bin kelimeden daha fazlasını anlatır.
                     En taze çiçeklerle duygularını hemen ifade et.
                 </p>
+                <!-- Ürünler bölümüne yumuşak kaydırma ile yönlendirme -->
                 <a href="#urunler" class="btn banner-btn">
                     Hemen Gör 🌸
                 </a>
             </div>
         </div>
     </div>
-
 </div>
 
-
+<!-- ============================================
+     ÜRÜN LİSTESİ BÖLÜMÜ
+     API'den gelen ürünlerin gösterildiği alan
+     ============================================ -->
 <h2 class="mb-4 text-center text-success fw-bold" id="urunler">💐 Fırsat Ürünleri ve Çiçekler</h2>
 
+<!-- Ürün listesi container: JavaScript ile dinamik olarak doldurulur -->
 <div class="row mt-4" id="product-list"></div>
 
+<!-- ============================================
+     JAVASCRIPT: ÜRÜN YÜKLEME VE GÖSTERME
+     API'den ürünleri çekip sayfaya render eder
+     ============================================ -->
 <script>
+// Ürün yükleme fonksiyonu: Arama metni ve kategori ID'sine göre filtreler
 window.loadProducts = function(searchValue = "", categoryId = "") {
+  // API URL'ini oluştur: Arama ve kategori parametrelerini ekle
   let url = `/api/products/?q=${searchValue}&category=${categoryId}`;
 
+  // API'den ürünleri çek
   fetch(url)
     .then(res => res.json())
     .then(data => {
       let html = "";
 
+      // Ürün yoksa uyarı mesajı göster
       if (data.length === 0) {
         html = `<div class="alert alert-warning text-center">Ürün bulunamadı.</div>`;
       }
 
+      // Her ürün için kart HTML'i oluştur
       data.forEach(product => {
         const imageUrl = product.image_url ? product.image_url : "https://via.placeholder.com/300x250";
 
         html += `
           <div class="col-6 col-md-3 mb-4">
             <div class="card h-100 shadow-sm border-0">
+              <!-- Ürün görseli: Sabit yükseklikte görsel -->
               <img src="${imageUrl}" class="card-img-top" style="height:250px; object-fit:cover;">
               <div class="card-body text-center">
+                <!-- Firma adı: Varsa gösterilir -->
                 ${product.company_name ? `<small class="text-muted d-block mb-1">🏢 ${product.company_name}</small>` : ''}
+                <!-- Ürün adı -->
                 <h6 class="fw-bold">${product.name}</h6>
+                <!-- Ürün fiyatı: Kırmızı renkte vurgulanmış -->
                 <p class="text-danger fw-bold">${product.price} TL</p>
+                <!-- Ürün detay sayfasına yönlendirme butonu -->
                 <a href="/urun/${product.id}/" class="btn btn-success w-100">İncele</a>
               </div>
             </div>
@@ -126,29 +155,35 @@ window.loadProducts = function(searchValue = "", categoryId = "") {
         `;
       });
 
+      // Oluşturulan HTML'i sayfaya ekle
       document.getElementById("product-list").innerHTML = html;
     });
 }
 
-/* Sayfa açılınca hepsi gelsin */
+// Sayfa yüklendiğinde tüm ürünleri yükle
 loadProducts();
 
-/* ÜST ARAMA + ÜST KATEGORİ BİRLİKTE ÇALIŞIR */
+// Arama input'u event listener: Kullanıcı yazdıkça ürünleri filtreler
 const input = document.getElementById("searchInput");
 
-if (input) {  // varsa bağla
+if (input) {  // Input varsa event listener ekle
   input.addEventListener("keyup", function () {
     loadProducts(this.value, selectedCategory);
   });
 }
+
+// URL parametrelerinden arama ve kategori bilgilerini al
+// Eğer URL'de arama veya kategori varsa, o parametrelere göre yükle
 const params = new URLSearchParams(window.location.search);
 const q = params.get("q") || "";
 const categoryFromUrl = params.get("category") || "";
 
 if (q || categoryFromUrl) {
+  // URL'den gelen parametrelere göre ürünleri yükle
   selectedCategory = categoryFromUrl;
   loadProducts(q, categoryFromUrl);
 } else {
+  // Parametre yoksa tüm ürünleri yükle
   loadProducts();
 }
 

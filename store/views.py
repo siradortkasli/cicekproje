@@ -9,7 +9,10 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 
-# 🔐 Firma Kayıt
+# ============================================
+# FİRMA KAYIT İŞLEMİ
+# Mevcut kullanıcılar için firma özelliği ekleme veya yeni firma kaydı
+# ============================================
 def company_register(request):
     from accounts.models import User
     
@@ -30,23 +33,33 @@ def company_register(request):
         user_exists = User.objects.filter(username=username).first()
         
         if user_exists:
-            # Kullanıcı var, şifresini kontrol et
-            user = authenticate(request, username=username, password=password)
-            if not user:
+            # Kullanıcı var, önce firma profili var mı kontrol et
+            try:
+                existing_company = Company.objects.get(user=user_exists)
+                # Firma profili var, şifre kontrolü yap
+                if not user_exists.check_password(password):
+                    return render(request, "company/cregister.html", {
+                        "error": "Bu kullanıcı zaten bir firmaya kayıtlı. Şifreniz yanlış. Lütfen firma giriş sayfasından giriş yapmayı deneyin."
+                    })
+                # Şifre doğru ama zaten firma profili var
                 return render(request, "company/cregister.html", {
-                    "error": "Bu kullanıcı adı zaten kullanılıyor. Şifrenizi kontrol edin veya farklı bir kullanıcı adı kullanın."
+                    "error": "Bu kullanıcı zaten bir firmaya kayıtlı. Lütfen firma giriş sayfasından giriş yapın."
                 })
-            
-            # Kullanıcının zaten firma profili var mı kontrol et
-            if hasattr(user, 'company_profile'):
-                return render(request, "company/cregister.html", {
-                    "error": "Bu kullanıcı zaten bir firmaya kayıtlı."
-                })
+            except Company.DoesNotExist:
+                # Firma profili yok, şifre kontrolü yap
+                if not user_exists.check_password(password):
+                    return render(request, "company/cregister.html", {
+                        "error": "Şifre yanlış. Lütfen doğru şifrenizi girin."
+                    })
+                # Şifre doğru, kullanıcıyı al
+                user = user_exists
             
             # Mevcut kullanıcıya firma özelliği ekle
+            # Mevcut kullanıcılar için is_active değerini değiştirmiyoruz
+            # Çünkü kullanıcı zaten aktif ve normal giriş yapabiliyor
+            # Sadece firma özelliği ekliyoruz
             user.is_company = True
-            user.is_active = False  # Admin onayı bekliyor
-            user.is_approved = False
+            user.is_approved = False  # Firma onayı bekliyor (Company.is_approved kontrol edilecek)
             user.save()
         else:
             # Email kontrolü (yeni kullanıcı için)
@@ -65,13 +78,27 @@ def company_register(request):
                 is_approved=False
             )
         
-        # Firma oluştur
-        company = Company.objects.create(
-            user=user,
-            name=company_name,
-            description=description,
-            is_approved=False
-        )
+        # Firma oluştur (eğer daha önce oluşturulmamışsa)
+        try:
+            company = Company.objects.get(user=user)
+            # Zaten varsa güncelle
+            company.name = company_name
+            company.description = description
+            company.is_approved = False
+            company.save()
+        except Company.DoesNotExist:
+            # Yeni firma oluştur
+            try:
+                company = Company.objects.create(
+                    user=user,
+                    name=company_name,
+                    description=description,
+                    is_approved=False
+                )
+            except Exception as e:
+                return render(request, "company/cregister.html", {
+                    "error": f"Firma oluşturulurken bir hata oluştu: {str(e)}"
+                })
         
         return render(request, "company/cregister.html", {
             "success": "Kayıt başarılı! Admin onayından sonra giriş yapabilirsiniz."
@@ -84,32 +111,51 @@ def company_register(request):
 def company_logout(request):
     """Firma panelinden çıkış yapar"""
     logout(request)
-    return redirect("company_login")
+    return redirect("login")
 
 # 🔐 Firma Login
 def company_login(request):
+    from accounts.models import User
+    
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
 
-        user = authenticate(request, username=username, password=password)
-        if user:
-            try:
-                company = user.company_profile
-                if not company.is_approved:
-                    return render(request, "company/clogin.html", {
-                        "error": "Firma henüz admin tarafından onaylanmadı"
-                    })
-                login(request, user)
-                return redirect("company_dashboard")
-            except Company.DoesNotExist:
-                return render(request, "company/clogin.html", {
-                    "error": "Bu kullanıcı bir firmaya ait değil. Firma kaydı yapmak için kayıt sayfasına gidin."
-                })
-        else:
+        # Önce kullanıcıyı bul
+        try:
+            user_obj = User.objects.get(username=username)
+        except User.DoesNotExist:
             return render(request, "company/clogin.html", {
                 "error": "Kullanıcı adı veya şifre hatalı"
             })
+        
+        # Şifre kontrolü
+        if not user_obj.check_password(password):
+            return render(request, "company/clogin.html", {
+                "error": "Kullanıcı adı veya şifre hatalı"
+            })
+        
+        # Kullanıcı aktif mi kontrol et
+        if not user_obj.is_active:
+            return render(request, "company/clogin.html", {
+                "error": "Hesabınız aktif değil. Lütfen admin ile iletişime geçin."
+            })
+        
+        # Firma profili var mı kontrol et
+        try:
+            company = user_obj.company_profile
+            if not company.is_approved:
+                return render(request, "company/clogin.html", {
+                    "error": "Firma henüz admin tarafından onaylanmadı. Lütfen admin onayını bekleyin."
+                })
+        except Company.DoesNotExist:
+            return render(request, "company/clogin.html", {
+                "error": "Bu kullanıcı bir firmaya ait değil. Firma kaydı yapmak için kayıt sayfasına gidin."
+            })
+        
+        # Her şey tamam, giriş yap
+        login(request, user_obj)
+        return redirect("company_dashboard")
 
     return render(request, "company/clogin.html")
 
@@ -432,10 +478,18 @@ def user_approve_order_item(request, order_item_id):
     if request.method != "POST":
         return JsonResponse({"success": False, "error": "Geçersiz istek"}, status=400)
     
+    # Kullanıcı giriş yapmış olmalı
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": False, "error": "Giriş yapmanız gerekiyor"}, status=403)
+    
     try:
         order_item = OrderItem.objects.get(id=order_item_id)
     except OrderItem.DoesNotExist:
         return JsonResponse({"success": False, "error": "Sipariş kalemi bulunamadı"}, status=404)
+    
+    # Kullanıcı sadece kendi siparişlerini onaylayabilir
+    if order_item.order.user != request.user:
+        return JsonResponse({"success": False, "error": "Bu sipariş size ait değil"}, status=403)
     
     if not order_item.preparation_image:
         return JsonResponse({"success": False, "error": "Henüz hazırlık fotoğrafı yüklenmemiş"}, status=400)
@@ -454,12 +508,64 @@ def user_approve_order_item(request, order_item_id):
     })
 
 
+# ============================================
+# KULLANICI FOTOĞRAF REDDETME İŞLEMİ
+# Kullanıcı firma tarafından yüklenen hazırlık fotoğrafını reddeder
+# Fotoğraf silinir, onay durumu sıfırlanır, sipariş "Hazırlanıyor" durumuna döner
+# ============================================
+@csrf_exempt
+def user_reject_order_item(request, order_item_id):
+    """Kullanıcı hazırlanan ürünün fotoğrafını reddeder"""
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "Geçersiz istek"}, status=400)
+    
+    # Kullanıcı giriş yapmış olmalı
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": False, "error": "Giriş yapmanız gerekiyor"}, status=403)
+    
+    try:
+        order_item = OrderItem.objects.get(id=order_item_id)
+    except OrderItem.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Sipariş kalemi bulunamadı"}, status=404)
+    
+    # Kullanıcı sadece kendi siparişlerini reddedebilir
+    if order_item.order.user != request.user:
+        return JsonResponse({"success": False, "error": "Bu sipariş size ait değil"}, status=403)
+    
+    if not order_item.preparation_image:
+        return JsonResponse({"success": False, "error": "Henüz hazırlık fotoğrafı yüklenmemiş"}, status=400)
+    
+    # Fotoğrafı sil ve onay durumunu sıfırla
+    if order_item.preparation_image:
+        order_item.preparation_image.delete()
+    order_item.preparation_image = None
+    order_item.is_user_approved = False
+    order_item.save()
+    
+    # Sipariş durumunu "Hazırlanıyor" yap (firma yeniden fotoğraf yüklemeli)
+    order_item.order.status = "PREPARING"
+    order_item.order.save()
+    
+    return JsonResponse({
+        "success": True,
+        "message": "Fotoğraf reddedildi. Firma yeniden fotoğraf yüklemelidir."
+    })
+
+
 def user_order_approval_page(request, order_id):
     """Kullanıcının sipariş onay sayfası"""
+    # Kullanıcı giriş yapmış olmalı
+    if not request.user.is_authenticated:
+        return redirect("login")
+    
     try:
         order = Order.objects.get(id=order_id)
     except Order.DoesNotExist:
         return render(request, "store/error.html", {"error": "Sipariş bulunamadı"})
+    
+    # Kullanıcı sadece kendi siparişlerini görebilir
+    if order.user != request.user:
+        return render(request, "store/error.html", {"error": "Bu sipariş size ait değil"})
     
     # Onay bekleyen ürünler
     pending_items = order.items.filter(
@@ -515,7 +621,7 @@ def product_list_api(request):
             "name": product.name,
             "price": product.price,
             "image_url": product.image_url,
-            "company_name": product.company.name if product.company else "",
+            "company_name": product.company.name,  # Artık company her zaman dolu (null=False)
         })
 
     return JsonResponse(data, safe=False)
@@ -618,6 +724,10 @@ def get_cart(request):
     cart = request.session.get("cart", [])
     return JsonResponse({"cart": cart})
     
+# ============================================
+# SİPARİŞ OLUŞTURMA (CHECKOUT)
+# Sepetteki ürünlerden sipariş oluşturur ve sepeti temizler
+# ============================================
 @csrf_exempt
 def checkout(request):
     if request.method != "POST":
@@ -633,8 +743,10 @@ def checkout(request):
 
     data = json.loads(request.body)
     
+    # Toplam fiyat hesaplama
     total = sum(item["price"] * item["quantity"] for item in cart)
 
+    # Sipariş oluştur
     order = Order.objects.create(
         total_price=total,
         user=request.user if request.user.is_authenticated else None,
@@ -644,6 +756,7 @@ def checkout(request):
         city=data.get("city", "")
     )
 
+    # Sepetteki her ürün için sipariş kalemi oluştur
     for item in cart:
         OrderItem.objects.create(
             order=order,
@@ -653,6 +766,7 @@ def checkout(request):
             image_url=item.get("image_url")
         )
 
+    # Sepeti temizle
     request.session["cart"] = []
 
     return JsonResponse({
@@ -749,6 +863,7 @@ def order_success(request, order_id):
         "items": items
     })
 
+@login_required
 def order_tracking(request):
     return render(request, "store/order_tracking.html")
 
@@ -805,12 +920,24 @@ def payment_complete(request):
         "success": True,
         "order_id": order.id
     })
+# ============================================
+# SİPARİŞ TAKİP API
+# Kullanıcı sipariş numarası ile sipariş durumunu sorgular
+# Güvenlik: Kullanıcı sadece kendi siparişlerini görebilir
+# ============================================
 @csrf_exempt
 def order_track_api(request):
     if request.method != "POST":
         return JsonResponse({
             "success": False,
             "error": "Geçersiz istek"
+        })
+
+    # Kullanıcı giriş yapmış olmalı
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            "success": False,
+            "error": "Sipariş takibi için giriş yapmanız gerekiyor"
         })
 
     try:
@@ -835,6 +962,13 @@ def order_track_api(request):
         return JsonResponse({
             "success": False,
             "error": "Sipariş bulunamadı"
+        })
+
+    # Güvenlik kontrolü: Kullanıcı sadece kendi siparişlerini görebilir
+    if order.user != request.user:
+        return JsonResponse({
+            "success": False,
+            "error": "Bu sipariş size ait değil"
         })
 
     items_data = []

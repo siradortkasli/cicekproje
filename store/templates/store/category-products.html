@@ -1,21 +1,34 @@
 {% extends "store/base.html" %}
 {% block content %}
 
+<!-- ============================================
+     KATEGORİ ÜRÜNLERİ SAYFASI
+     Belirli bir kategoriye ait ürünleri listeleme sayfası
+     ============================================ -->
+
+<!-- Kategori başlığı: Seçilen kategorinin adı -->
 <h3 class="mb-4 text-success">{{ category.name }}</h3>
 
+<!-- Ürün listesi: Grid yapısında ürün kartları -->
 <div class="row">
   {% for product in products %}
+    <!-- Her ürün için kart: Responsive grid (mobilde 2, desktop'ta 4 sütun) -->
     <div class="col-6 col-md-3 mb-4">
       <div class="card h-100 shadow-sm">
+        <!-- Ürün görseli: Sabit yükseklikte görsel -->
         <img src="{{ product.image_url }}" class="card-img-top" style="height:250px; object-fit:cover;">
         <div class="card-body text-center">
+          <!-- Ürün adı -->
           <h6 class="fw-bold">{{ product.name }}</h6>
+          <!-- Ürün fiyatı: Kırmızı renkte vurgulanmış -->
           <p class="text-danger fw-bold">{{ product.price }} TL</p>
+          <!-- Ürün detay sayfasına yönlendirme butonu -->
           <a href="/urun/{{ product.id }}/" class="btn btn-success w-100">İncele</a>
         </div>
       </div>
     </div>
   {% empty %}
+    <!-- Ürün yoksa bilgilendirme mesajı -->
     <p>Bu kategoride ürün yok.</p>
   {% endfor %}
 </div>
